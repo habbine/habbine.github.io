@@ -44,7 +44,11 @@
   // Blog: series + theme + search
   var posts = document.getElementById('posts');
   if (posts) {
-    var cards = [].slice.call(posts.children), bs = { theme: 'all', series: null, q: '' };
+    var cards = [].slice.call(posts.children);
+    var langChips = [].slice.call(document.querySelectorAll('[data-filter="posts"] [data-lang]'));
+    var pressedLang = langChips.filter(function (b) { return b.getAttribute('aria-pressed') === 'true'; })[0];
+    var defLang = pressedLang ? pressedLang.dataset.lang : 'all';
+    var bs = { theme: 'all', series: null, q: '', lang: defLang };
     var chips = [].slice.call(document.querySelectorAll('[data-filter="posts"] [data-theme]'));
     var series = [].slice.call(document.querySelectorAll('[data-series-group] [data-series]'));
     var bcount = document.querySelector('[data-filter="posts"] [data-count]'), bempty = document.querySelector('[data-empty]');
@@ -52,18 +56,20 @@
     function run() {
       var n = 0;
       cards.forEach(function (c) {
-        var ok = (bs.theme === 'all' || c.dataset.themes.split(' ').indexOf(bs.theme) > -1) && (!bs.series || c.dataset.series === bs.series) && (!bs.q || c.dataset.search.indexOf(bs.q) > -1);
+        var ok = (bs.theme === 'all' || c.dataset.themes.split(' ').indexOf(bs.theme) > -1) && (!bs.series || c.dataset.series === bs.series) && (!bs.q || c.dataset.search.indexOf(bs.q) > -1) && (bs.lang === 'all' || (c.dataset.langs || '').split(' ').indexOf(bs.lang) > -1);
         c.hidden = !ok; if (ok) n++;
       });
-      setPressed(chips, 'data-theme', bs.theme);
+      setPressed(chips, 'data-theme', bs.theme); setPressed(langChips, 'data-lang', bs.lang);
       series.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.series === bs.series ? 'true' : 'false'); });
       bcount.textContent = fmt(bcount, n); bempty.hidden = n > 0;
     }
     chips.forEach(function (b) { b.addEventListener('click', function () { bs.theme = b.dataset.theme; run(); }); });
+    langChips.forEach(function (b) { b.addEventListener('click', function () { bs.lang = b.dataset.lang; run(); }); });
     series.forEach(function (b) { b.addEventListener('click', function () { bs.series = bs.series === b.dataset.series ? null : b.dataset.series; bs.theme = 'all'; run(); }); });
     if (input) input.addEventListener('input', function () { bs.q = input.value.trim().toLowerCase(); run(); });
     var clear = document.querySelector('[data-clear]');
-    if (clear) clear.addEventListener('click', function () { bs = { theme: 'all', series: null, q: '' }; if (input) input.value = ''; run(); });
+    if (clear) clear.addEventListener('click', function () { bs = { theme: 'all', series: null, q: '', lang: 'all' }; if (input) input.value = ''; run(); });
+    run();
   }
 
   // Copy buttons (share link, citations)

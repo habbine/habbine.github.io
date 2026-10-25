@@ -571,3 +571,9 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 .cv-more[open] > summary { margin-bottom: 4px; }
 .cv-more[open] { display: flex; flex-direction: column-reverse; }
 .cv-more > summary { align-self: flex-start; }
+
+/* end-of-article invitation */
+.article .post-cta { margin: 36px 0 8px; padding: 22px 24px; border: 1px solid var(--c-line); border-left: 3px solid var(--wine); background: #fff; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.article .post-cta .kicker { color: var(--wine); }
+.article .post-cta p { margin: 0; text-align: left; }
+.article .post-cta .btn { text-decoration: none; }
