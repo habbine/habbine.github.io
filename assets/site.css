@@ -607,3 +607,11 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 }
 @media (max-width: 860px) { .name-box .about-bio .about-head { display: none; } }
 @media (max-width: 860px) { .name-box .about-id .hero-name, .name-box .about-id .hero-tag { text-align: left !important; text-align-last: left !important; } .name-box .about-id .hero-name { font-size: clamp(18px, 6.4vw, 28px); } }
+
+/* Desktop About: name + tagline in a rectangle matching the bio column; bio text spans full column width */
+@media (min-width: 861px) {
+  .name-box .about-id { box-sizing: border-box; width: 100%; border: 1px solid var(--plum-mid); background: rgba(255,255,255,0.03); padding: 22px 24px; display: flex; flex-direction: column; gap: 6px; }
+  .name-box .about-id .hero-name { font-size: min(55px, 4.3vw); white-space: nowrap; text-align: left; }
+  .name-box .about-id .hero-tag { font-size: clamp(16px, 1.8vw, 22px); text-align: left; }
+  .name-box .about-bio p { max-width: none; width: 100%; }
+}
