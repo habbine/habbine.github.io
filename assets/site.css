@@ -590,4 +590,3 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 @keyframes banner-drift-small { 0%, 100% { translate: 0 0; } 50% { translate: -48px -30px; } }
 .banner::before { animation: banner-drift-big 14s ease-in-out infinite; }
 .banner::after { animation: banner-drift-small 9s ease-in-out infinite; }
-@media (prefers-reduced-motion: reduce) { .banner::before, .banner::after { animation: none; } }
