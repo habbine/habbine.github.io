@@ -616,3 +616,12 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
   .name-box .about-bio p { max-width: none; width: 100%; }
 }
 @media (min-width: 861px) { .name-box .about-bio .social { margin-top: 28px; } }
+
+/* Desktop About: same format as the phone layout — no heading, one text size, justified, tight paragraph spacing */
+@media (min-width: 861px) {
+  .name-box .about-bio .about-head { display: none; }
+  .name-box .about-bio .lead { font-size: 16px; font-weight: 400; line-height: 1.5; }
+  .name-box .about-bio p { font-size: 16px; line-height: 1.5; }
+  .name-box .about-bio p + p { margin-top: 10px; }
+  .name-box .about-bio .social { margin-top: 24px; }
+}
