@@ -331,8 +331,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .hero-sub { max-width: none; }
 .hero .btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .hero .btns .btn { min-width: 0; width: 100%; }
-.hero .social { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
-.hero .social a { justify-content: center; padding: 0 6px; gap: 6px; font-size: 14px; min-width: 0; }
+.hero .social { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.hero .social a { justify-content: center; padding: 0 4px; gap: 5px; font-size: 13px; min-width: 0; }
 .hero .social svg { width: 18px; height: 18px; }
 .hero .social a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 1100px) and (min-width: 861px) { .hero .social a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } }
@@ -504,8 +504,8 @@ h1, h2, h3, .h1, .h2, .h3, p, li, span, a { hyphens: manual; -webkit-hyphens: ma
 /* About intro: one rectangle — name, text and social row share the same width */
 .name-box { max-width: 680px; width: 100%; }
 .name-box > p.measure, .name-box > p.lead { max-width: none; }
-.name-box .social { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; width: 100%; }
-.name-box .social a { justify-content: center; padding: 0 6px; gap: 6px; font-size: 14px; min-width: 0; }
+.name-box .social { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; width: 100%; }
+.name-box .social a { justify-content: center; padding: 0 4px; gap: 5px; font-size: 13px; min-width: 0; }
 .name-box .social svg { width: 18px; height: 18px; }
 .name-box .social a span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 560px) { .name-box .social { display: flex; flex-wrap: wrap; } .name-box .social a { flex: 1 1 calc(50% - 4px); font-size: 14px; } }
