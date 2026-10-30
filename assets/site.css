@@ -498,6 +498,7 @@ h1, h2, h3, .h1, .h2, .h3, p, li, span, a { hyphens: manual; -webkit-hyphens: ma
 @media (max-width: 900px) { .contact-grid { grid-template-columns: minmax(0, 1fr); } }
 .name-box > p.measure, .name-box > p.lead { max-width: 680px; width: 100%; }
 @media (max-width: 860px) { .name-box, .name-box * { text-align: center !important; text-align-last: center !important; } .name-box > * { align-items: center; justify-content: center; } .name-box .social { justify-content: center; } }
+@media (max-width: 860px) { .name-box .hero-name + .hero-tag { margin-top: -16px !important; } .name-box .about-head { display: block; font-family: var(--sans); font-size: 22px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: var(--rose); text-align: center; margin-bottom: 18px; } }
 @media (max-width: 860px) { .name-box .about-bio p { text-align: justify !important; text-align-last: left !important; hyphens: auto; -webkit-hyphens: auto; } .name-box .about-bio { box-sizing: border-box; } .name-box .about-bio .lead { font-size: 17px; line-height: 1.55; } .name-box .about-bio .social { margin-top: 30px; width: 100%; } .name-box .about-bio p + p { margin-top: 18px; } .name-box .about-bio .measure { line-height: 1.6; } }
 @media (max-width: 860px) { .about-photo { margin-inline: auto; } .about-bio { width: 100%; border: 1px solid var(--plum-mid); background: rgba(255,255,255,0.03); padding: 24px 20px; } }
 /* About intro: one rectangle — name, text and social row share the same width */
