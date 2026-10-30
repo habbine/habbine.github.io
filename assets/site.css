@@ -584,3 +584,10 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 .article .post-cta .kicker { color: var(--wine); }
 .article .post-cta p { margin: 0; text-align: left; }
 .article .post-cta .btn { text-decoration: none; }
+
+/* publication banner: slow drifting circles */
+@keyframes banner-drift-big { 0%, 100% { translate: 0 0; } 50% { translate: -36px 28px; } }
+@keyframes banner-drift-small { 0%, 100% { translate: 0 0; } 50% { translate: -48px -30px; } }
+.banner::before { animation: banner-drift-big 14s ease-in-out infinite; }
+.banner::after { animation: banner-drift-small 9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .banner::before, .banner::after { animation: none; } }
