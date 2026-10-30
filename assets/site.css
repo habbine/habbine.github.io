@@ -606,3 +606,4 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
   .name-box .about-bio .social { margin-top: 24px; }
 }
 @media (max-width: 860px) { .name-box .about-bio .about-head { display: none; } }
+@media (max-width: 860px) { .name-box .about-id .hero-name, .name-box .about-id .hero-tag { text-align: left !important; text-align-last: left !important; } .name-box .about-id .hero-name { font-size: clamp(18px, 6.4vw, 28px); } }
