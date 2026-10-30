@@ -120,6 +120,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 @media (max-width: 860px) {
   .hero-in { grid-template-columns: minmax(0, 1fr); padding: 32px 24px 0; }
   .hero-text { padding-bottom: 36px; text-align: center; }
+  .hero-text, .hero-text * { text-align: center !important; text-align-last: center !important; }
+  .hero-name, .hero-tag, .hero-hook, .hero-sub, .hero .langs-line { display: block; width: 100%; margin-inline: auto; }
   .hero-text > * { width: 100%; }
   .hero-hook, .hero-sub { margin-inline: auto; }
   .hero-photo { order: -1; }
