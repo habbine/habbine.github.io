@@ -591,3 +591,6 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 @keyframes banner-drift-small { 0%, 100% { translate: 0 0; } 50% { translate: -48px -30px; } }
 .banner::before { animation: banner-drift-big 14s ease-in-out infinite; }
 .banner::after { animation: banner-drift-small 9s ease-in-out infinite; }
+
+/* hero hook: one line on phones, sized to the text column */
+@media (max-width: 860px) { .hero-hook { white-space: nowrap; font-size: clamp(12px, 5.4cqi, 26px); } .hide-sm { display: none; } }
