@@ -124,7 +124,7 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
   .hero-name, .hero-tag, .hero-hook, .hero-sub, .hero .langs-line { display: block; width: 100%; margin-inline: auto; }
   .hero-text > * { width: 100%; }
   .hero-hook, .hero-sub { margin-inline: auto; }
-  .hero-photo { order: -1; }
+  .hero-photo { order: -1; margin-bottom: 28px; }
   .hero-photo img { max-width: 230px; }
   .hero-frame::before { inset: -12px -10px 12px 10px; }
 }
