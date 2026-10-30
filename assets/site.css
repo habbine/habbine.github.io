@@ -497,6 +497,7 @@ h1, h2, h3, .h1, .h2, .h3, p, li, span, a { hyphens: manual; -webkit-hyphens: ma
 .contact-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 @media (max-width: 900px) { .contact-grid { grid-template-columns: minmax(0, 1fr); } }
 .name-box > p.measure, .name-box > p.lead { max-width: 680px; width: 100%; }
+@media (max-width: 860px) { .name-box, .name-box * { text-align: center !important; text-align-last: center !important; } .name-box > * { align-items: center; justify-content: center; } .name-box .social { justify-content: center; } }
 /* About intro: one rectangle — name, text and social row share the same width */
 .name-box { max-width: 680px; width: 100%; }
 .name-box > p.measure, .name-box > p.lead { max-width: none; }
