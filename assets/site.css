@@ -635,3 +635,6 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
   html[lang="fr"] .hero-sub { font-size: 14px; }
   html[lang="ko"] .hero-sub { font-size: 17px; }
 }
+
+/* hero photo: lift it off the bottom rule on desktop */
+@media (min-width: 861px) { .hero-photo { margin-bottom: 40px; } }
