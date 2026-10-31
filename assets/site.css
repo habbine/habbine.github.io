@@ -638,3 +638,6 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 
 /* hero photo: lift it off the bottom rule on desktop */
 @media (min-width: 861px) { .hero-photo { margin-bottom: 40px; } }
+
+/* Korean hero sub-line: left-aligned, no mid-word breaks */
+html[lang="ko"] .hero-sub { text-align: left; word-break: keep-all; }
