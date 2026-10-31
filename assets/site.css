@@ -632,7 +632,7 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 @media (min-width: 861px) {
   .hero-sub { max-width: 80ch; text-wrap: balance; }
   html[lang="en"] .hero-sub { font-size: 16px; }
-  html[lang="fr"] .hero-sub { font-size: 18px; }
+  html[lang="fr"] .hero-sub { font-size: 17px; text-align: left; word-break: normal; }
   html[lang="ko"] .hero-sub { font-size: 17px; }
 }
 
