@@ -644,3 +644,5 @@ html[lang="ko"] .hero-sub { text-align: justify; text-align-last: left; word-bre
 
 /* desktop: photo top aligns with the hero text, no gap below */
 @media (min-width: 861px) { .hero-photo { align-self: start; margin-bottom: 0; } }
+/* desktop: photo bottom meets the bottom of the social icon row (sized on a ~1254px viewport) */
+@media (min-width: 861px) { .hero-photo img { width: 328px; max-width: none; } }
