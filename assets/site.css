@@ -735,3 +735,5 @@ html[lang="ko"] .hero-sub { text-align: justify; text-align-last: left; word-bre
 @media (min-width: 861px) { .hero-photo { align-self: start; margin-bottom: 0; } }
 /* desktop: photo bottom meets the bottom of the social icon row (sized on a ~1254px viewport) */
 @media (min-width: 861px) { .hero-photo img { width: 328px; max-width: none; } }
+
+.ai-note { word-break: keep-all; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--plum-line); font-size: 13px; line-height: 1.5; color: var(--muted); }
