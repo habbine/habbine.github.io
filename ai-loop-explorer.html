@@ -1,0 +1,1536 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Loop Explorer</title><link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/"><meta name="author" content="Habbine Estelle Kim"><meta name="copyright" content="© 2026 Habbine Estelle Kim, CC BY-NC 4.0">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one schematic canvas with a reading panel beside it. Under 700px the canvas becomes a stack of cards and the panel follows it. */
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --surface2:#F3F5F8; --ink:#111C26; --muted:#52606C; --line:#CBD3DB;
+  --uni:#66758A; --bi:#6A58D6; --term:#D2481F; --circ:#0B8F72; --accent:#1F5FD6; --on-accent:#FFFFFF; --hit:#B26A00;
+  --node:#FFFFFF; --nodeline:#A9B5C1; --dots:#D5DCE3;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D141B; --surface:#151E27; --surface2:#1B2631; --ink:#E8EEF4; --muted:#9AA9B7; --line:#2B3846;
+    --uni:#8FA0B5; --bi:#A596FF; --term:#FF8359; --circ:#34D1A8; --accent:#6FA0FF; --on-accent:#0D141B; --hit:#FFB84D;
+    --node:#1A2531; --nodeline:#41536A; --dots:#1D2833; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#151E27; --surface2:#1B2631; --ink:#E8EEF4; --muted:#9AA9B7; --line:#2B3846;
+  --uni:#8FA0B5; --bi:#A596FF; --term:#FF8359; --circ:#34D1A8; --accent:#6FA0FF; --on-accent:#0D141B; --hit:#FFB84D;
+  --node:#1A2531; --nodeline:#41536A; --dots:#1D2833; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:1320px;margin:0 auto}
+h1{font:700 clamp(26px,4vw,38px)/1.05 var(--f-display);letter-spacing:-.02em;margin:0 0 8px;text-wrap:balance}
+h2,h3{margin:0}
+.lede{margin:0;color:var(--muted);max-width:66ch;font-size:15px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.controls{display:grid;grid-template-columns:1fr;gap:10px 32px;margin:8px 0 8px}
+.controls>.crow:first-child,.controls>.crow:nth-child(4){grid-column:1/-1}
+@media (min-width:1000px){.controls{grid-template-columns:1fr 1fr}}
+details.ctl{margin:14px 0 0;border:0;background:none;padding:0}
+details.ctl>summary{display:none;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-weight:600;font-size:14px;cursor:pointer}
+@media (max-width:700px){details.ctl>summary{display:flex;justify-content:space-between;align-items:center}details.ctl>summary::after{content:'\25B8';font-size:16px}details.ctl[open]>summary::after{content:'\25BE'}}
+.ctx{font-size:13px;color:var(--muted);display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.ctx input{width:18px;height:18px}
+.find{flex:1 1 260px;max-width:380px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px}
+.status{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:4px 0 6px;font-size:13px;font-weight:600}
+.node.gone,.lk.gone{visibility:hidden;pointer-events:none}
+ul.auth{list-style:none;margin:6px 0 12px;padding:0;display:flex;flex-direction:column;gap:10px}
+ul.auth li{display:flex;gap:10px;align-items:flex-start}
+.jtag{flex:none;min-width:54px;text-align:center;font-size:12px;font-weight:700;border:1px solid var(--ink);border-radius:6px;padding:2px 6px}
+ul.auth .arole{display:block;margin-top:2px}
+.scoretxt{width:100%;margin:8px 0;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:8px}
+.chip.mk{padding:3px 10px;font-size:12.5px}
+ul.auth small{display:block;color:var(--muted);font-size:12.5px;margin-top:2px}
+.linkbtn{background:none;border:0;color:var(--accent);font:inherit;font-size:12.5px;text-decoration:underline;cursor:pointer;padding:0 2px}
+#authd h3{font-size:14px;margin:14px 0 4px}
+.stack .card.gone,.stack .row.gone{display:none}
+.crow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.lab{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:64px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:999px;font-weight:500;font-size:13px;cursor:pointer}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.scn[aria-pressed="true"]{background:var(--hit);color:var(--bg);border-color:var(--hit)}
+.chip[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.spacer{flex:1 1 20px}
+.btn{border:1px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.hint{margin:0 0 10px;color:var(--muted);font-size:13px;min-height:20px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 350px;gap:16px;align-items:start}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow-x:auto;min-width:0}
+svg.map{display:block;width:100%;min-width:860px;height:auto}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
+.panel h2{font:700 21px/1.15 var(--f-display);letter-spacing:-.01em;margin-bottom:6px;text-wrap:balance}
+.panel h3{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 8px;font-weight:600}
+.panel p{margin:0 0 8px}
+.panel ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.steps{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.back{border:0;background:none;color:var(--accent);padding:0 0 10px;font-weight:600;cursor:pointer;font-size:13px}
+.row{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:8px 10px;cursor:pointer;min-width:0;transition:opacity .25s}
+.row:hover{border-color:var(--muted)}
+.row span:last-child{display:flex;flex-direction:column;min-width:0}
+.row small{color:var(--muted);font-size:12.5px}
+.g{font-weight:700;font-size:17px;line-height:1.2;width:20px;text-align:center;flex:none}
+.g-uni{color:var(--uni)}.g-bi{color:var(--bi)}.g-term{color:var(--term)}.g-circ{color:var(--circ)}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;background:var(--surface2)}
+.typebadge{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:13px;border-radius:999px;padding:3px 11px;border:1.5px solid currentColor}
+.typebadge.t-uni{color:var(--uni)}.typebadge.t-bi{color:var(--bi)}.typebadge.t-term{color:var(--term)}.typebadge.t-circ{color:var(--circ)}
+.facts li{border-left:3px solid var(--line);padding-left:10px}
+.facts small,.legal small{display:block;color:var(--muted);font-size:12px}
+.tag{display:inline-block;font-size:12px;font-weight:600;border-radius:4px;padding:1px 6px;margin-right:6px;border:1px solid var(--muted);color:var(--muted);vertical-align:1px}
+.tag-primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tag-secondary{border-style:solid}
+.tag-estimate{border-style:dashed}
+.tag-institution{border-style:solid;border-width:2px;color:var(--ink);border-color:var(--muted)}
+.tag-research{border-style:double;border-width:3px;padding:0 5px}
+.legal li{font-size:13.5px}
+.note{color:var(--muted);font-size:12.5px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:6px 14px;font-weight:600;font-size:13px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.term{border:0;background:none;padding:2px 0;min-height:24px;box-sizing:border-box;display:inline-block;line-height:1.3;font:inherit;line-height:1.3;color:inherit;cursor:help;border-bottom:1.5px dotted var(--accent)}
+body.lvl-expert .term{border-bottom-color:var(--muted)}
+.term:hover{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+.pop{position:fixed;z-index:30;max-width:320px;background:var(--ink);color:var(--bg);border-radius:10px;padding:10px 12px;box-shadow:0 6px 24px rgba(0,0,0,.28)}
+.pop[hidden]{display:none}
+.pop b{display:block;margin-bottom:2px}
+.pop p{margin:0;font-size:13px;line-height:1.45}
+dl.gloss{margin:0;padding:0 0 14px;display:grid;grid-template-columns:minmax(0,210px) minmax(0,1fr);gap:8px 16px}
+dl.gloss dt{font-weight:600}
+dl.gloss dd{margin:0;color:var(--muted)}
+@media (max-width:700px){dl.gloss{grid-template-columns:minmax(0,1fr);gap:2px}dl.gloss dd{margin-bottom:8px}}
+.panel p.sub{font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 4px}
+.how li{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.dots{display:flex;gap:5px;margin:4px 0 12px}
+.dots i{width:18px;height:4px;border-radius:2px;background:var(--line)}
+.dots i.on{background:var(--accent)}
+.cap{margin-top:18px;border-top:1px solid var(--line);padding-top:12px}
+.cap textarea{width:100%;margin-top:8px;border:1px solid var(--line);border-radius:8px;background:var(--surface2);color:var(--ink);font:13px/1.45 var(--f-body);padding:8px;resize:vertical}
+.legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.lg{display:flex;gap:10px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:8px 10px;cursor:pointer;min-width:0}
+.lg[aria-pressed="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.lg[aria-disabled="true"]{opacity:.45;cursor:not-allowed}
+.lg svg{flex:none;width:46px;height:16px;overflow:visible}
+.lg b{display:block;font-size:13px;color:var(--ink)}.lg small{display:block;color:var(--muted);font-size:12px;line-height:1.3}
+.lg-uni{color:var(--uni)}.lg-bi{color:var(--bi)}.lg-term{color:var(--term)}.lg-circ{color:var(--circ)}
+.lg span:last-child{min-width:0}
+details.more{margin:0;border:0;background:none;padding:0}
+details.more summary{display:inline-block;padding:6px 0;color:var(--accent);font-size:13px}
+details.more[open] summary{margin-bottom:4px}
+details.more .crow{margin:6px 0}
+details{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:0 16px}
+summary{cursor:pointer;padding:12px 0;font-weight:600}
+.list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;padding-bottom:16px}
+.src{padding:0 0 14px;margin:0;display:flex;flex-direction:column;gap:6px;list-style:none}
+.src a{color:var(--accent);display:inline-block;padding:4px 0}
+.stack{display:none;flex-direction:column;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0;transition:opacity .25s}
+.card.dim,.row.dim{opacity:.28}
+.card.hit{border-color:var(--hit);box-shadow:0 0 0 1px var(--hit)}
+.card.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.card .head{display:flex;flex-direction:column;align-items:flex-start;text-align:left;border:0;background:none;padding:0;cursor:pointer;min-width:0}
+.card .head b{font:700 16px/1.2 var(--f-display)}
+.card .head small{color:var(--muted);font-size:12px}
+.card{position:relative}
+.cb{display:none;position:absolute;top:-9px;right:-9px;width:22px;height:22px;border-radius:50%;background:var(--hit);color:var(--bg);font:700 12px var(--f-body);align-items:center;justify-content:center}
+.card.hit .cb{display:flex}
+/* map */
+.dotsbg{fill:url(#dots)}
+.pat{fill:var(--dots)}
+.node rect{fill:var(--node);stroke:var(--nodeline);stroke-width:1.4;transition:stroke .2s}
+.node.end rect{stroke:var(--term);stroke-dasharray:5 3}
+.tb{pointer-events:none}
+.tb circle{fill:var(--surface);stroke:var(--ink);stroke-width:1.6}
+.tb text{fill:var(--ink);font:700 11px var(--f-body)}
+.lk.dim .tb{opacity:.18}
+.lk.minor:not(.focus) .tb{opacity:.4}
+.trend{display:inline-block;font-weight:700;border:1px solid var(--ink);border-radius:999px;padding:1px 10px}
+.node .t{fill:var(--ink);font:600 14.5px var(--f-body)}
+.node .s{fill:var(--muted);font:400 12.5px var(--f-body)}
+.node{cursor:pointer;transition:opacity .25s}
+.node:hover rect{stroke:var(--ink)}
+.node.sel rect{stroke:var(--accent);stroke-width:3}
+.node.hit rect{stroke:var(--hit);stroke-width:3.5;stroke-dasharray:none}
+.node .bdg{display:none}
+.node.hit .bdg{display:block}
+.bdg circle{fill:var(--hit)}
+.bdg text{fill:var(--bg);font:700 12px var(--f-body)}
+.node.dim,.lk.dim{opacity:.13}
+.lk{transition:opacity .25s}
+.lk .line{fill:none;stroke-width:2.4;stroke-linecap:round}
+.t-uni .line{stroke:var(--uni)}.t-bi .line{stroke:var(--bi)}.t-term .line{stroke:var(--term)}.t-circ .line{stroke:var(--circ);stroke-dasharray:7 5}
+.t-uni .p{fill:var(--uni)}.t-bi .p{fill:var(--bi)}.t-term .p{fill:var(--term)}.t-circ .p{fill:var(--circ)}
+.lk .stopbar{stroke:var(--term);stroke-width:4;stroke-linecap:round}
+.lk.minor:not(.focus){opacity:.3}
+.lk.minor .line{stroke-width:1.5}
+.lk.minor:not(.focus) .particles{display:none}
+.lk.dim .particles{display:none}
+.lk.sel .line,.lk.hit .line,.lk.new .line{stroke-width:4.2}
+.lk.new .line{filter:drop-shadow(0 0 3px var(--accent))}
+.node.new rect{stroke:var(--accent);stroke-width:3.5}
+.card.new{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.lk.hit .line{filter:drop-shadow(0 0 3px var(--hit))}
+.hit-link{fill:none;stroke:transparent;stroke-width:18;pointer-events:stroke;cursor:pointer}
+.tip rect{fill:var(--ink)}
+.tip text{fill:var(--bg);font:600 12px var(--f-body)}
+@keyframes cue{0%,100%{stroke-width:2.5}50%{stroke-width:6}}
+.node.cue rect{stroke:var(--accent);stroke-width:3}
+@media (prefers-reduced-motion:no-preference){.node.cue rect{animation:cue 1.6s ease-in-out infinite}}
+@keyframes pulse{0%,100%{stroke-opacity:1}50%{stroke-opacity:.2}}
+@media (prefers-reduced-motion:no-preference){.node.hit rect{animation:pulse 1.4s ease-in-out var(--d,0s) 3}}
+/* flow cue used in the stacked phone view */
+.fl{position:relative;flex:none;width:38px;height:14px;margin-top:4px;color:var(--uni)}
+.fl-bi{color:var(--bi)}.fl-term{color:var(--term)}.fl-circ{color:var(--circ)}
+.fl::before{content:"";position:absolute;left:6px;right:6px;top:6px;border-top:2.4px solid currentColor}
+.fl-circ::before{border-top-style:dashed}
+.fl::after{content:"";position:absolute;right:0;top:2px;border-left:7px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.fl-term::after{border:0;width:3px;height:14px;top:0;right:2px;background:currentColor;border-radius:2px}
+.fl s{position:absolute;left:0;top:2px;border-right:7px solid currentColor;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.fl i{position:absolute;top:3px;left:8px;width:8px;height:8px;border-radius:50%;background:currentColor;animation:fwd 1.6s linear infinite}
+.fl i.b{animation-name:bwd}
+@keyframes fwd{from{transform:translateX(0);opacity:1}to{transform:translateX(16px);opacity:.15}}
+@keyframes bwd{from{transform:translateX(16px);opacity:1}to{transform:translateX(0);opacity:.15}}
+@media (prefers-reduced-motion:reduce){.fl i{animation:none}}
+/* record view: a clean stage with captions for screen recording */
+.recbar{margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.recbar[hidden]{display:none}
+.rtitle{font:700 24px/1.15 var(--f-display);letter-spacing:-.01em}
+.rstep{margin:0;font-size:20px;line-height:1.35;max-width:60ch}
+body.rec details.ctl,body.rec .status,body.rec .controls,body.rec .hint,body.rec .legend,body.rec details,body.rec .panel,body.rec .lede{display:none}
+body.rec .main{grid-template-columns:minmax(0,1fr)}
+/* vertical 9:16 frame for short video */
+.rectools[hidden]{display:none}
+.rectools{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:12px;display:flex;flex-direction:column;gap:8px;width:150px;z-index:20}
+.vframe{display:none}
+body.tall h1,body.tall .main,body.tall #recbar{display:none}
+body.tall .vframe{display:flex;flex-direction:column;margin:0 auto;aspect-ratio:9/16;height:min(94vh,1180px);max-width:100%;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;container-type:size}
+.vhead{padding:4cqw 5cqw 0}
+.vkick{font:600 3cqw var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.vtitle{font:700 7cqw/1.05 var(--f-display);letter-spacing:-.01em;margin-top:1cqw;text-wrap:balance}
+.vmap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 2cqw}
+.vmap .stage{border:0;background:none;overflow:visible;width:100%;display:block}
+.vmap svg.map{min-width:0;width:100%;height:auto;max-height:100%}
+.vcap{padding:0 5cqw 4cqw;display:flex;flex-direction:column;gap:2cqw}
+.vdots{display:flex;gap:1.2cqw}
+.vdots i{height:.9cqw;flex:1;border-radius:1cqw;background:var(--line)}
+.vdots i.on{background:var(--hit)}
+.vstep{margin:0;font:500 5cqw/1.3 var(--f-body);text-wrap:balance}
+.vfoot{margin:0;color:var(--muted);font-size:2.8cqw}
+svg.tallmap .node .t{font-size:15px}
+svg.tallmap .node .s{font-size:12px}
+@media (max-width:1020px){
+  .main{grid-template-columns:minmax(0,1fr)}
+  .panel{position:static;max-height:none}
+  .legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .stage{display:none}
+  .stack{display:flex}
+  #play,#rec,#rec9{display:none}
+  #tour,#build{width:100%}
+  .panel{order:-1}
+  .lab{min-width:0;width:100%}
+}
+@media (max-width:520px){.legend{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><marker id="arrL" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></marker></defs></svg>
+
+<main class="wrap" lang="en">
+  <h1>AI Loop Explorer</h1>
+  <p class="lede">Follow money, chips, power and rules around the AI build-out. Moving dots show which way each thing flows, and the line style shows what kind of relationship it is.</p>
+
+  <details class="ctl" id="ctl">
+    <summary>Options: chains, what if, filters</summary>
+    <div class="controls" id="controls">
+      <div class="crow">
+        <span class="lab">Chain</span>
+        <div class="chips" id="layers" role="group" aria-label="Show all chains together, or one chain at a time"></div>
+        <label class="ctx"><input type="checkbox" id="ctx"> Keep other chains faint</label>
+      </div>
+      <div class="crow">
+        <span class="lab">Guided</span>
+        <button class="btn primary" id="tour" type="button" data-act="tour-start">Follow the loop</button>
+        <button class="btn" id="build" type="button" data-act="build-start">Build it up</button>
+        <button class="btn" id="play" type="button" aria-pressed="true">Pause motion</button>
+      </div>
+      <div class="crow">
+        <span class="lab">What if</span>
+        <div class="chips" id="scn" role="group" aria-label="Try a what-if scenario"></div>
+      </div>
+      <div class="crow">
+        <span class="lab">Trend</span>
+        <div class="chips" id="trends" role="group" aria-label="Show flows by hypothesised trend"></div>
+      </div>
+      <div class="crow">
+        <span class="lab">Detail</span>
+        <div class="seg" id="level" role="group" aria-label="Depth of explanation"><button type="button" data-act="level" data-v="beginner" aria-pressed="true">Beginner</button><button type="button" data-act="level" data-v="expert" aria-pressed="false">Expert</button></div>
+        <span class="note" id="lvlnote"></span>
+      </div>
+      <div class="crow">
+        <label class="lab" for="find">Find</label>
+        <input class="find" id="find" type="text" list="finds" placeholder="Type a box or a flow, such as Foundry" autocomplete="off">
+        <datalist id="finds"></datalist>
+      </div>
+      <details class="more" id="more">
+        <summary>Record a video</summary>
+        <div class="crow">
+          <button class="btn" id="rec" type="button" data-act="rec-start">Record wide</button>
+          <button class="btn" id="rec9" type="button" data-act="rec-start-tall">Record vertical</button>
+        </div>
+      </details>
+    </div>
+  </details>
+  <div class="status" id="status-row">
+    <span id="active">Showing all flows together.</span>
+    <button class="btn" id="reset" type="button" data-act="reset" hidden>Reset view</button>
+  </div>
+  <p class="hint" id="hint" aria-live="polite"></p>
+  <div class="recbar" id="recbar" hidden aria-live="polite"></div>
+  <div class="rectools" id="rectools" hidden>
+    <p class="note">Record the framed area. These controls sit outside the frame.</p>
+    <button class="btn" type="button" data-act="rec-prev">Back</button>
+    <button class="btn" type="button" data-act="rec-pause" id="rtpause">Pause</button>
+    <button class="btn" type="button" data-act="rec-next">Next</button>
+    <button class="btn" type="button" data-act="rec-stop">Exit (Esc)</button>
+  </div>
+  <div class="vframe" id="vframe">
+    <div class="vhead"><div class="vkick">AI Loop Explorer</div><div class="vtitle" id="vtitle"></div></div>
+    <div class="vmap" id="vmap"></div>
+    <div class="vcap"><div class="vdots" id="vdots"></div><p class="vstep" id="vstep"></p><p class="vfoot">Illustrative reasoning along the map, not a forecast.</p></div>
+  </div>
+
+  <div class="main">
+    <div>
+      <div class="stage"><svg class="map" id="map" viewBox="0 0 1230 640" role="img" aria-label="Map of the AI ecosystem. The relationship list below the map is a text version."></svg></div>
+      <div class="stack" id="stack"></div>
+      <div class="legend" id="legend" role="group" aria-label="Relationship types. Press one to show only that type."></div>
+      <p class="note" id="badgekey"><b>Badges on lines:</b> ▲ rising, ■ flat or stalling, ◆ contested, ▼ falling. These are my hypotheses for the next 12 to 24 months.</p>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+
+  <div class="pop" id="pop" hidden role="dialog" aria-label="Definition"><b id="popt"></b><p id="popd"></p></div>
+
+  <details id="authd">
+    <summary id="authsum">Who oversees what: USA, EU and Korea</summary>
+    <p class="note">The map itself is jurisdiction-neutral. This list names authorities in three jurisdictions only. It is not exhaustive and not legal advice. Reviewed 7 Nov 2026. Authorities, laws and ministries change, so verify against the official source. <b>Primary</b> means I opened the official page. <b>Secondary</b> means I opened a press page. <b>Institution</b> means an international or research institution\u2019s report I opened.</p>
+    <div class="crow"><span class="lab">Show</span><div class="chips" id="jur" role="group" aria-label="Choose a jurisdiction"></div></div>
+    <div id="authbody"></div>
+  </details>
+
+  <details>
+    <summary id="glosssum">Glossary</summary>
+    <dl class="gloss" id="gloss"></dl>
+  </details>
+
+  <details>
+    <summary>All relationships as a list</summary>
+    <div class="list" id="list"></div>
+  </details>
+
+  <details>
+    <summary>Sources and how to read the evidence tags</summary>
+    <p class="note">Sources were searched on 7 Nov 2026. The map states no measurements, only mechanisms and dated hypotheses, so it stays valid when numbers change. Re-check each hypothesis at the source named in its panel. <span class="tag tag-primary">Primary</span> means the original document from an agency, regulator, central bank, statute or research firm, which I opened. <span class="tag tag-secondary">Secondary</span> means a figure relayed by press or trade press. <span class="tag tag-institution">Institution</span> means a report by an international or research institution, not peer-reviewed. <span class="tag tag-estimate">Estimate</span> means a modelled projection by a research firm or bank. <span class="tag tag-research">Peer-reviewed</span> means a published academic paper. <span class="tag">My framework</span> means analysis, not a sourced fact. Leverage labels, what-if scenarios and rule links are my judgement. This tool groups related relationships into 30 links. Data providers, developer tools and hardware lifecycle are not drawn.</p>
+    <ul class="src">
+      <li><a href="https://www.bis.org/publications/bulletin-140-building-ai-credit-structures-and-spillovers.pdf" target="_blank" rel="noopener">Building AI on credit, BIS Bulletin 140, 27 Oct 2026 (primary)</a></li>
+      <li><a href="https://www.bis.org/publ/qtrpdf/r_qt2603u.htm" target="_blank" rel="noopener">Financing the AI infrastructure boom, BIS Quarterly Review, Mar 2026 (primary)</a></li>
+      <li><a href="https://www.imf.org/en/blogs/articles/2026/10/12/global-financial-markets-face-rising-risks-from-ai-bond-yields-and-cyberattacks" target="_blank" rel="noopener">Global financial markets face rising risks, IMF, Oct 2026 (primary)</a></li>
+      <li><a href="https://www.iea.org/reports/electricity-2026/grids" target="_blank" rel="noopener">Electricity 2026, grids chapter, IEA (primary)</a></li>
+      <li><a href="https://www.iea.org/reports/key-questions-on-energy-and-ai/executive-summary" target="_blank" rel="noopener">Key Questions on Energy and AI, IEA (primary)</a></li>
+      <li><a href="https://www.bain.com/es/about/media-center/press-releases/20252/$2-trillion-in-new-revenue-needed-to-fund-ais-scaling-trend---bain--companys-6th-annual-global-technology-report/" target="_blank" rel="noopener">Bain &amp; Company press release on revenue needed to fund AI scaling, 23 Sep 2025 (primary)</a></li>
+      <li><a href="https://www.edpb.europa.eu/system/files/2024-12/edpb_opinion_202428_ai-models_en.pdf" target="_blank" rel="noopener">EDPB Opinion 28/2024 (primary)</a></li>
+      <li><a href="https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng" target="_blank" rel="noopener">Regulation (EU) 2026/1744, Digital Omnibus on AI (primary)</a></li>
+      <li><a href="https://digital-strategy.ec.europa.eu/en/news/eu-agrees-simplify-ai-rules-boost-innovation-and-ban-nudification-apps-protect-citizens" target="_blank" rel="noopener">European Commission, EU agrees to simplify AI rules, 7 May 2026 (primary)</a></li>
+      <li><a href="https://www.tribuneindia.com/news/business/morgan-stanley-estimates-global-ai-debt-issuance-to-double-to-570-billion-in-2026-report/" target="_blank" rel="noopener">AI debt issuance estimate, wire report, 10 Jun 2026 (secondary)</a></li>
+      <li><a href="https://ofgem.gov.uk/press-release/ofgem-acts-free-grid-capacity-tackling-speculative-data-centre-projects" target="_blank" rel="noopener">Ofgem press release on speculative data-centre projects, 29 Jul 2026 (primary)</a></li>
+      <li><a href="https://www.ecfr.gov/current/title-17/section-230.144A" target="_blank" rel="noopener">17 CFR 230.144A, private resales to institutions (primary)</a></li>
+      <li><a href="https://www.springlex.eu/en/packages/ai-act/ai-act-regulation/article-3/" target="_blank" rel="noopener">AI Act, Article 3 definitions (text of Regulation 2024/1689)</a></li>
+      <li><a href="https://trendforce.com/news/2026/10/27/news-tsmc-reportedly-eyes-20-cowos-price-hike-skips-equipment-price-renegotiations-amid-ai-demand-surge" target="_blank" rel="noopener">Advanced packaging capacity and prices (TrendForce News, Oct 2026)</a></li>
+      <li><a href="https://consensus.app/papers/details/20cef7c7781b5f6292e7a328624604ba/" target="_blank" rel="noopener">Recalibrating global data center energy-use estimates, Masanet et al., Science, 2020 (peer-reviewed)</a></li>
+      <li><a href="https://consensus.app/papers/details/7b8a62e2549854cd91fbae8e6a7476fc/" target="_blank" rel="noopener">Building accurate energy-use statistics for data centers, Wang et al., Engineering, 2026 (peer-reviewed)</a></li>
+      <li><a href="https://consensus.app/papers/details/bb819feb37c9587fa2ad1ad86c3400ad/" target="_blank" rel="noopener">Geopolitical risks and semiconductor supply chains, Jamshed et al., 2025 (peer-reviewed)</a></li>
+      <li><a href="https://consensus.app/papers/details/fcb830cfe79d532d85fd6ac77ed1aeb8/" target="_blank" rel="noopener">Semiconductor supply chain resilience, Xiong et al., Int. J. Production Research, 2024 (peer-reviewed)</a></li>
+      <li><a href="https://www.trendforce.com/presscenter/news/20260909-13225.html" target="_blank" rel="noopener">Foundry revenue, Q2 2026 (TrendForce)</a></li>
+      <li><a href="https://counterpointresearch.com/en/insights/global-hbm-market-share-q2-2026" target="_blank" rel="noopener">HBM market share, Q2 2026 (Counterpoint Research; only the headline was readable)</a></li>
+    </ul>
+  </details>
+</main>
+
+<script>
+(function(){
+'use strict';
+var NS='http://www.w3.org/2000/svg';
+function S(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs){e.setAttribute(k,attrs[k]);}if(parent){parent.appendChild(e);}return e;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+var W=1230,NW=152,NH=54,XS=1.12;
+var reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var TYPES={
+  uni:{name:'One-way',glyph:'→',help:'Flows in one direction only.',lg:'Dots move one way'},
+  bi:{name:'Two-way',glyph:'⇄',help:'Something flows each way. Each side depends on the other.',lg:'Dots move both ways'},
+  term:{name:'Ends here',glyph:'⊣',help:'The flow stops at its target and is not passed on.',lg:'Dots stop at a bar'},
+  circ:{name:'Loops back',glyph:'↻',help:'The output returns to where it started and feeds the next round.',lg:'Dashed, loops back'}
+};
+var LAYERS=[['all','All together'],['phys','Physical supply'],['comp','Compute and service'],['money','Money'],['power','Power'],['know','Knowledge and rules']];
+var TAGS={primary:'Primary',secondary:'Secondary',estimate:'Estimate',research:'Peer-reviewed',framework:'My framework',institution:'Institution'};
+
+var nodes=[
+ {id:'inst',label:'Institutions',sub:'Rules and subsidies',x:461,y:55,role:'Governments and regulators that set rules, subsidies and limits for every other box.',
+  legal:['Sets the rules the other boxes work under.','Dates, scope and jurisdiction vary, so verify before relying on any rule.']},
+ {id:'uni',label:'Universities',sub:'Graduates, research',x:649,y:55,role:'Schools and research groups that train the people who work in labs.'},
+ {id:'rd',label:'R&D, open source',sub:'Shared code, papers',x:837,y:55,role:'Shared code, papers and tools that anyone can build on and improve.'},
+ {id:'fund',label:'Funding',sub:'Equity, debt, credit',x:461,y:185,role:'Investors, strategic funds and lenders that pay for the build-out.',
+  lev:['Contestable','Many lenders and structures, and deals are bespoke.'],
+  facts:[
+   {t:'A bank estimated about $570B of AI-related debt issuance for 2026, with about $236B by 31 May.',tag:'secondary',src:'Wire report, 10 Jun 2026. Not checked against the bank report'},
+   
+   ],
+  legal:['Instruments: equity, project bonds, private credit, guarantees.','144A bonds skip SEC registration and sell to institutional buyers (sourced).','The borrower is often a special-purpose vehicle set up by the developer (sourced).','Watch: disclosure gaps and lender concentration.']},
+ {id:'labs',label:'AI labs',sub:'Train, serve models',x:837,y:185,role:'Groups that train models and serve them to customers. They need compute, money and people.',
+  legal:['Duties differ for providers and deployers under EU AI rules.','Personal-data rules (GDPR) apply to training data and use.']},
+ {id:'cloud',label:'Cloud & apps',sub:'Buyers, hosted AI',x:1025,y:185,role:'Companies that rent compute and sell AI apps. They are also the biggest buyers of chips.',
+  lev:['Concentrated buyers','A handful of buyers drive most chip and capacity demand.'],
+  facts:[
+   
+   
+   {t:'The two figures cover four and five companies at different dates, so they are not like for like.',tag:'framework',src:''}],
+  legal:['Multi-year compute and capacity commitments tie buyers and labs together.','Watch: competition review of those ties, and how commitments are disclosed and recognised.']},
+ {id:'users',label:'Users',sub:'People, businesses',x:1025,y:315,role:'People, businesses and developers who use AI services and pay for them.',
+  lev:['Unknown','End-user revenue is the open question and the evidence here is thin.'],
+  facts:[{t:'Bain estimated that about $2T of annual AI revenue is needed by 2030 to fund compute scaling, and that the world is about $800B short.',tag:'estimate',src:'One bank estimate in a secondary report. The weakest figure here.'}],
+  legal:['Customer terms, liability allocation and consumer protection apply.','Watch: who is liable when an AI output causes harm.']},
+ {id:'design',label:'Chip design',sub:'Layouts, rules',x:273,y:315,role:'Teams that draw the chip layouts. They need the foundry’s design rules to do it.',
+  legal:['Design licences and IP terms govern the layout files and the foundry’s design rules.']},
+ {id:'raw',label:'Raw materials',sub:'Silicon, gases, tools',x:85,y:445,role:'Silicon, metals, gases and chemicals that every chip needs.'},
+ {id:'foundry',label:'Foundry',sub:'Chip fabrication',x:273,y:445,role:'Factories that print chips on wafers for other companies.',
+  lev:['Concentrated','One supplier dominates, so everyone downstream depends on it.'],
+  facts:[
+   {t:'The top foundry holds a 72.5% market share. The next two hold 5.9% and 5.4% (Q2 2026).',tag:'estimate',src:'Research firm, 9 Sep 2026'},
+   ],
+  legal:['Supply agreements and design licences, with export controls and competition law on top.','Watch: licensing limits on advanced chips and tools.']},
+ {id:'mem',label:'Memory, packaging',sub:'HBM, assembly',x:461,y:445,role:'Stacks fast memory next to the processor and packages the result.',
+  lev:['Concentrated, shifting','Three suppliers, and shares moved 8 to 12 points in one quarter.'],
+  facts:[
+   {t:'The top HBM supplier holds about 50% of revenue and the second about 33% (Q2 2026).',tag:'estimate',src:'Research firm, Sep 2026'},
+   {t:'No supplier publishes HBM revenue, so these shares cannot be checked against filings.',tag:'secondary',src:'Research article'}]},
+ {id:'chips',label:'Chips & servers',sub:'GPUs, racks',x:649,y:445,role:'Finished accelerators assembled into server racks.',
+  facts:[
+   
+   {t:'',tag:'estimate',src:'Secondary guide'}],
+  legal:['Vendor financing uses guarantees, equity.','Watch: round-tripping scrutiny, where money loops back as revenue.']},
+ {id:'dc',label:'Data centers',sub:'Compute capacity',x:837,y:445,role:'Buildings full of racks, cooling and power connections.',
+  lev:['Constrained','Growth is limited by power, equipment and connections, not demand alone.'],
+  facts:[
+   {t:'Data-centre electricity use is projected to rise from about 485 TWh in 2025 to about 950 TWh in 2030.',tag:'primary',src:'IEA, Key Questions on Energy and AI (primary)'},
+   {t:'Data-centre electricity use grew 17% in 2025.',tag:'primary',src:'IEA, Key Questions on Energy and AI (primary)'}],
+  legal:['Grid connection agreements and power purchase deals decide timing.','Watch: planning permission and local opposition.']},
+ {id:'wo',label:'Write-offs',sub:'Capital stops here',x:1025,y:445,end:true,role:'Capital that is written down or lost when projects fail to pay back.'},
+ {id:'gen',label:'Generation',sub:'Fuel, renewables',x:1025,y:575,role:'Plants that make the electricity, fuel-based and renewable.'},
+ {id:'grid',label:'Power & grid',sub:'Wires, connection',x:837,y:575,role:'Wires and operators that move power and approve new connections.',
+  lev:['Binding constraint','Connection queues set how fast capacity can arrive.'],
+  facts:[
+   {t:'About 2,500 GW of projects wait in grid connection queues worldwide.',tag:'secondary',src:'IEA Electricity 2026, via press'},
+   {t:'Great Britain’s demand queue grew from 41 GW (Nov 2024) to 125 GW (Jun 2025), at least 80 GW of it data centres.',tag:'secondary',src:'Regulator consultation of 29 Jul 2026, via trade press'}],
+  legal:['A GB regulator consulted on removing speculative projects from the queue (sourced).','Readiness tests for connection offers are being added (sourced).']},
+ {id:'stall',label:'Stalled builds',sub:'Waiting on grid',x:649,y:575,end:true,role:'Projects waiting for a grid connection. The flow stops here until a connection arrives.'}
+];
+var N={};
+nodes.forEach(function(n){n.x=85+(n.x-85)*XS;N[n.id]=n;});
+
+var NOFIG={t:'No sourced figure found for this link.',tag:'framework'};
+var links=[
+ {id:'raw_foundry',from:'raw',to:'foundry',type:'uni',layers:['phys'],label:'Wafers, chemicals',fwd:'Wafers, chemicals, tools',why:'Without a steady supply of inputs the foundry cannot print wafers.',ev:NOFIG},
+ {id:'design_foundry',from:'design',to:'foundry',type:'bi',layers:['phys'],label:'Layouts out, rules back',fwd:'Chip layouts',back:'Design rules and process data',why:'Designers cannot finish a chip without the foundry’s rules, and the foundry needs layouts to plan capacity.',ev:NOFIG},
+ {id:'foundry_mem',from:'foundry',to:'mem',type:'uni',layers:['phys'],label:'Wafers, dies',fwd:'Wafers and dies',why:'Advanced packaging was cited as a bottleneck in an earlier research pass that I did not recheck, so this step may limit how many finished chips exist.',ev:{t:'Fabrication is concentrated: the top foundry holds a 72.5% market share (Q2 2026).',tag:'estimate',src:'Research firm'}},
+ {id:'mem_chips',from:'mem',to:'chips',type:'uni',layers:['phys'],label:'HBM, packaged chips',fwd:'HBM stacks and packaged chips',why:'An accelerator without memory cannot run large models.',ev:{t:'The top two HBM suppliers hold about 50% and 33% of revenue (Q2 2026).',tag:'estimate',src:'Research firm'}},
+ {id:'chips_dc',from:'chips',to:'dc',type:'uni',layers:['phys'],label:'Racks shipped',fwd:'Server racks',why:'Racks only become capacity once a building and power are ready.',ev:NOFIG},
+ {id:'dc_labs',from:'dc',to:'labs',type:'bi',layers:['comp','money'],label:'Compute out, payment back',fwd:'Compute capacity',back:'Payments',why:'Labs pay for compute and may not yet earn it back, so how it is financed matters.',ev:NOFIG},
+ {id:'labs_cloud',from:'labs',to:'cloud',type:'uni',layers:['comp'],label:'Models and products',fwd:'Models, products, APIs',why:'Cloud and app companies resell or embed what the labs build.',ev:NOFIG},
+ {id:'cloud_users',from:'cloud',to:'users',type:'bi',layers:['comp','money'],label:'Service out, fees back',fwd:'AI services',back:'Fees',why:'This is where customers pay for the service. Its size relative to capex decides whether the loop can fund itself.',ev:{t:'Bain estimated that about $2T of annual AI revenue is needed by 2030, with about $800B still missing.',tag:'primary',src:'Bain & Company press release, 23 Sep 2025'}},
+ {id:'users_labs',from:'users',to:'labs',type:'circ',layers:['comp'],label:'Usage shapes the next model',fwd:'Usage data and feedback, which return to the labs and shape the next model',why:'Usage tells labs what to improve, so demand and product quality feed each other.',curve:45,ev:NOFIG},
+ {id:'fund_labs',from:'fund',to:'labs',type:'bi',layers:['money'],label:'Equity in, compute back',fwd:'Equity',back:'Compute access and stakes',why:'Funders often supply money that the lab then spends on the funders’ own compute.',ev:NOFIG},
+ {id:'fund_cloud',from:'fund',to:'cloud',type:'uni',layers:['money'],label:'Equity and debt',fwd:'Equity and debt',why:'Buyers can fund capex from cash or from debt, and reported debt issuance is rising.',curve:-110,ev:{t:'A bank estimated about $570B of AI-related debt issuance for 2026.',tag:'secondary',src:'Wire report, 10 Jun 2026'}},
+ {id:'fund_dc',from:'fund',to:'dc',type:'bi',layers:['money'],label:'Project debt, repayment',fwd:'Project debt',back:'Repayments',why:'Data-centre debt is repaid from leases, so tenant strength and power timing matter.',ev:{t:'Lease commitments were about $1.2T by mid-2026, with about $820B not yet started.',tag:'secondary',src:'Rating agency figure quoted in BIS Bulletin 140'}},
+ {id:'cloud_chips',from:'cloud',to:'chips',type:'uni',layers:['money','phys'],label:'Chip orders',fwd:'Purchase orders',why:'Buyer capex is the demand signal for the whole chip chain.',ev:{t:'The five largest US hyperscalers are expected to spend more than $800B of capex in 2026.',tag:'primary',src:'BIS Bulletin 140 (primary)'}},
+ {id:'fund_chips',from:'fund',to:'chips',type:'bi',layers:['money'],label:'Vendor financing, orders back',fwd:'Financing and guarantees',back:'Orders',why:'When a supplier funds its customer, the customer’s orders can look stronger than outside demand.',ev:{t:'Vendors can sell hardware, hold equity, buy capacity and guarantee leases. BIS gives no share.',tag:'primary',src:'BIS Bulletin 140 (primary)'}},
+ {id:'users_fund',from:'users',to:'fund',type:'circ',layers:['money'],label:'Revenue recycled into funding',fwd:'Revenue, which raises the confidence to fund the next round',why:'If revenue falls short, the next round of funding gets harder and the loop slows.',curve:40,ev:NOFIG},
+ {id:'dc_wo',from:'dc',to:'wo',type:'term',layers:['money'],label:'Impairments',fwd:'Losses that are written off',why:'This is where the debt and equity stop earning anything.',ev:{t:'No sourced write-off figure found. This link shows a risk, not an observed loss.',tag:'framework'}},
+ {id:'gen_grid',from:'gen',to:'grid',type:'uni',layers:['power'],label:'Electricity',fwd:'Electricity',why:'Building new supply takes time.',ev:NOFIG},
+ {id:'grid_dc',from:'grid',to:'dc',type:'bi',layers:['power'],label:'Power out, requests back',fwd:'Electricity',back:'Connection requests',why:'Operators decide who connects and when, so they set the pace of capacity.',ev:{t:'Data-centre electricity use is projected to go from about 485 TWh (2025) to about 950 TWh (2030).',tag:'estimate',src:'IEA projection via press'}},
+ {id:'grid_stall',from:'grid',to:'stall',type:'term',layers:['power'],label:'Queue delay',fwd:'Projects that must wait',why:'A built shell with no connection earns nothing.',ev:{t:'About 2,500 GW of projects wait in connection queues worldwide.',tag:'secondary',src:'IEA via press'}},
+ {id:'dc_gen',from:'dc',to:'gen',type:'circ',layers:['power'],label:'Demand drives new capacity',fwd:'Demand forecasts, which drive new generation and then more demand',why:'Forecasts shape grid investment, and overestimates risk stranded assets.',curve:45,ev:NOFIG},
+ {id:'uni_labs',from:'uni',to:'labs',type:'term',layers:['know'],label:'Graduates hired',fwd:'Trained engineers and researchers',why:'Talent is consumed by the employer and does not flow on.',ev:NOFIG},
+ {id:'rd_labs',from:'rd',to:'labs',type:'circ',layers:['know'],label:'Shared code returns as improvements',fwd:'Shared code and papers, which come back as improvements',why:'Open work lowers cost for everyone and the labs feed fixes back.',curve:50,ev:NOFIG},
+ {id:'rd_dc',from:'rd',to:'dc',type:'uni',layers:['know'],label:'Efficiency gains',fwd:'Methods that cut the compute needed per task',why:'Better methods can reduce the compute each task needs. Total demand can still rise if cheaper AI is used more.',curve:150,ev:{t:'A peer-reviewed study (2024) estimates the compute needed to reach a set language-model performance level halved about every 8 months (90% interval about 2 to 22 months). The same study finds more compute added more to overall gains than better algorithms did. It does not show that total compute demand falls.',tag:'research',src:'Ho et al., NeurIPS 2024 (abstract opened)',url:'https://proceedings.neurips.cc/paper_files/paper/2024/hash/6b066da6a23bc55f9b887e7298102884-Abstract.html'}},
+ {id:'labs_users',from:'labs',to:'users',type:'uni',layers:['comp'],label:'Price per use',fwd:'The price users pay per unit of output',why:'If prices fall faster than usage grows, revenue per unit of compute falls.',curve:-45,ev:{t:'A research institute (Mar 2025) found the lowest price to reach a given benchmark score fell fast, by 9x to 900x a year depending on the milestone. The authors say it is unclear whether the fastest declines continue. It covers six benchmarks and a price per million tokens, not revenue per unit of compute.',tag:'institution',src:'Epoch AI, LLM inference price trends (read 7 Nov 2026)',url:'https://epoch.ai/data-insights/llm-inference-price-trends'}},
+ {id:'chips_wo',from:'chips',to:'wo',type:'term',layers:['money'],label:'Faster chip generations',fwd:'Obsolescence of installed chips',why:'If new chip generations arrive quickly, installed hardware can be worth less than the debt used to buy it.',curve:85,ev:{t:'This is an economic mechanism, not an observed trend. I did not source a measurement for it.',tag:'framework'}},
+ {id:'rates_fund',from:'inst',to:'fund',type:'uni',layers:['money'],label:'Interest rates and credit conditions',fwd:'Policy rates and lending conditions',why:'Higher borrowing costs make debt-funded builds more expensive and can slow new funding.',curve:-50,ev:{t:'This is an economic mechanism, not an observed trend. I did not source a measurement for it.',tag:'framework'}},
+ {id:'rules_foundry',from:'inst',to:'foundry',type:'uni',layers:['know'],minor:true,label:'Export controls, competition law',fwd:'Export controls and competition rules',why:'Rules decide who can buy the most advanced chips and tools.',curve:70,ev:NOFIG},
+ {id:'rules_labs',from:'inst',to:'labs',type:'uni',layers:['know'],minor:true,label:'AI and data-protection rules',fwd:'AI and data-protection rules',why:'Duties differ by role, such as provider or deployer.',ev:NOFIG},
+ {id:'rules_fund',from:'inst',to:'fund',type:'uni',layers:['know'],minor:true,label:'Disclosure and credit rules',fwd:'Disclosure and credit rules',why:'Private placements skip public registration, so less is disclosed.',ev:{t:'144A bonds skip SEC registration and sell to institutional buyers.',tag:'secondary',src:'Trade press'}},
+ {id:'rules_grid',from:'inst',to:'grid',type:'uni',layers:['know'],minor:true,label:'Connection and planning rules',fwd:'Connection and planning rules',why:'One regulator (Great Britain) has proposed tighter queue rules. Other regions vary.',curve:-60,ev:{t:'A GB regulator consulted on 29 Jul 2026 on removing speculative projects from the queue.',tag:'secondary',src:'Trade press'}}
+];
+var LK={};links.forEach(function(l){LK[l.id]=l;});
+
+var TOUR=[
+ {title:'Money comes in',text:'Investors, strategic funds and lenders pay labs, buyers and data-centre builders. Debt is a growing source of money.',nodes:['fund','labs','cloud','dc'],links:['fund_labs','fund_cloud','fund_dc'],facts:['A bank estimated about $570B of AI-related debt issuance for 2026 (secondary, wire report).']},
+ {title:'Buyers order chips',text:'Cloud and app companies are the biggest buyers. Chip suppliers also finance some customers, so orders can partly reflect their own financing.',nodes:['cloud','chips','fund'],links:['cloud_chips','fund_chips'],facts:['The five largest US hyperscalers are expected to spend more than $800B of capex in 2026 (BIS).']},
+ {title:'A few firms make the chips',text:'Design, fabrication and memory are concentrated. A design cannot be finished without the foundry’s rules, so that link runs both ways.',nodes:['raw','design','foundry','mem','chips'],links:['raw_foundry','design_foundry','foundry_mem','mem_chips'],facts:['Top foundry share is about 72.5% and top HBM share about 50% (estimates).']},
+ {title:'Racks become capacity',text:'Racks only count once a building is ready, and that is paid for by project debt that is repaid from leases.',nodes:['chips','dc','fund'],links:['chips_dc','fund_dc'],facts:[]},
+ {title:'Power sets the pace',text:'Electricity comes from generation through the grid. A connection queue can stop a finished building, and demand forecasts push new generation, which loops back.',nodes:['gen','grid','dc','stall'],links:['gen_grid','grid_dc','grid_stall','dc_gen'],facts:['About 2,500 GW of projects sit in grid queues worldwide (reported).']},
+ {title:'Labs turn compute into products',text:'Labs pay for compute, hire graduates, build on shared code and sell through cloud and app companies.',nodes:['dc','labs','cloud','uni','rd'],links:['dc_labs','labs_cloud','uni_labs','rd_labs'],facts:[]},
+ {title:'Users pay and teach the next model',text:'Fees are the revenue side of the loop, as opposed to money from investors and lenders. Usage feeds the next model, and revenue recycles into the next round of funding.',nodes:['cloud','users','labs','fund'],links:['cloud_users','users_labs','users_fund'],facts:['Bain estimated that about $2T of annual AI revenue is needed by 2030, and that the world is about $800B short (Bain, Sep 2025).']},
+ {title:'Where it can break',text:'Three places stand out. Stalled builds if power is late. Write-offs if debt cannot be repaid. And revenue that is too small to refund the loop.',nodes:['stall','wo','users','fund','chips'],links:['grid_stall','dc_wo','users_fund','fund_chips'],facts:[]},
+ {title:'Rules sit over every layer',text:'Institutions set export controls, AI and data rules, disclosure rules and connection rules. These are faint by default and clear here.',nodes:['inst','foundry','labs','fund','grid'],links:['rules_foundry','rules_labs','rules_fund','rules_grid'],facts:[]}
+];
+
+var SCN=[
+ {id:'power',label:'Power is late',intro:'A data centre cannot start until it has a grid connection. If connections arrive late, the delay moves along the loop.',
+  steps:[
+   {n:['grid','stall'],l:['grid_stall'],t:'More projects wait in the connection queue, and some never connect.'},
+   {n:['dc'],l:['grid_dc'],t:'Racks arrive before buildings are powered, so capacity opens later than planned.'},
+   {n:['labs','cloud'],l:['dc_labs'],t:'Labs and cloud companies get less compute, so products and revenue arrive later.'},
+   {n:['fund','wo'],l:['fund_dc','dc_wo'],t:'Debt is repaid from leases that have not started. A long delay raises write-off risk.'}]},
+ {id:'debt',label:'Debt gets harder',intro:'Much of the build-out is financed with debt. If lenders pull back, the effect runs from funding outward.',
+  steps:[
+   {n:['fund'],l:[],t:'Lenders ask for higher returns or stop lending on some structures.'},
+   {n:['dc'],l:['fund_dc'],t:'Project debt costs more, so some data-centre builds are delayed or shrink.'},
+   {n:['cloud'],l:['fund_cloud'],t:'Buyers lean more on their own cash, so capex slows.'},
+   {n:['chips','mem','foundry'],l:['cloud_chips','fund_chips'],t:'Chip orders soften and vendor financing carries more weight. Concentrated suppliers feel it first.'}]},
+ {id:'revenue',label:'Revenue falls short',intro:'The loop assumes customers will eventually pay enough. If revenue falls short, the pressure runs back toward funding.',
+  steps:[
+   {n:['users','cloud'],l:['cloud_users'],t:'Customers pay less than the capex plan assumed.'},
+   {n:['fund'],l:['users_fund'],t:'The next round of funding is harder to raise because revenue has not refunded the last one.'},
+   {n:['dc'],l:['fund_cloud','fund_dc'],t:'Capex guidance is cut and fewer projects get financed.'},
+   {n:['chips','mem','foundry'],l:['cloud_chips'],t:'Chip demand falls back after the order boom.'}]},
+ {id:'chips',label:'A chip step stalls',intro:'A few suppliers make the chips and memory. If one step slows, the delay runs downstream.',
+  steps:[
+   {n:['foundry','mem'],l:['foundry_mem'],t:'A concentrated step slows, so fewer wafers or packaged memory leave the factory.'},
+   {n:['chips'],l:['mem_chips'],t:'Fewer accelerators are finished, and prices and waiting times rise.'},
+   {n:['dc'],l:['chips_dc'],t:'Buildings wait for racks, so capacity opens later.'},
+   {n:['labs','cloud'],l:['dc_labs','cloud_chips'],t:'Labs and buyers compete for scarce chips, and orders back up.'}]}
+];
+var SC={};SCN.forEach(function(s){SC[s.id]=s;});
+
+/* Evidence cross-checked against primary sources on 7 Nov 2026. This block replaces the first-pass evidence defined above. */
+function setNode(id,o){for(var k in o){N[id][k]=o[k];}}
+function ev(id,o){LK[id].ev=o;}
+setNode('fund',{
+ facts:[
+  {t:'The five largest US hyperscalers issued $222B of gross bonds by September 2026. Bonds and asset-backed securities linked to off-balance-sheet vehicles totalled about $75B to $100B so far this year, per market sources cited by BIS.',tag:'secondary',src:'BIS Bulletin 140, 27 Oct 2026, quoting market sources'},
+  {t:'The IMF reviewed 14 AI-related deals since 2023: about $300B of equity and $650B of debt in exchange for $1.4T of future revenue commitments. It describes a circular funding structure between AI firms.',tag:'primary',src:'IMF, Oct 2026 (primary)'},
+  {t:'Data-centre lease commitments of the largest hyperscalers were about $1.2T by mid-2026, with about $820B not yet started.',tag:'secondary',src:'Rating agency figure quoted in BIS Bulletin 140'},
+  {t:'BIS gives no percentage of AI capex funded by debt. It says only that a rising share is financed with long-term debt.',tag:'primary',src:'BIS Bulletin 140 (primary)'},
+  {t:'A bank estimated about $570B of AI-related debt issuance for 2026, with about $236B by 31 May.',tag:'secondary',src:'Wire report of a bank estimate, 10 Jun 2026. Not checked against the bank report.'}],
+ legal:['Instruments: equity, project bonds, private credit, guarantees.','Rule 144A lets unregistered securities be resold to qualified institutional buyers, which are large institutions that meet the SEC size test (17 CFR 230.144A, primary).','A special-purpose vehicle can own the data centre and earn its income from the contracts it has signed (BIS Bulletin 140, primary).','Unstarted leases are disclosed but not recorded as debt, and guarantees are often carried at little or no value (BIS).','Watch: opacity, which BIS says could make the market for this debt freeze in stress.']});
+setNode('cloud',{
+ facts:[
+  {t:'The five largest US hyperscalers are expected to spend more than $800B of capex in 2026, about 2.5% of US GDP.',tag:'primary',src:'BIS Bulletin 140 (primary)'},
+  {t:'BIS does not say how much of this capex is funded by debt. It says only that a rising share is.',tag:'primary',src:'BIS Bulletin 140 (primary)'}],
+ legal:['Multi-year compute and capacity commitments tie buyers and labs together.','Buyers lease capacity from vehicles, sometimes on short initial terms with renewal options (BIS, primary).','Watch: competition review of those ties, and how commitments are disclosed and recognised.']});
+setNode('users',{
+ facts:[
+  {t:'Bain estimated that about $2T of annual AI revenue is needed by 2030 to fund compute scaling, and that the world is about $800B short.',tag:'primary',src:'Bain & Company press release, 23 Sep 2025'},
+  {t:'Both figures are Bain’s estimate of need and gap. They are not observed revenue or profit.',tag:'framework',src:''}]});
+setNode('foundry',{
+ facts:[
+  {t:'The top foundry earned about $40.2B in Q2 2026 and holds a 72.5% share. The next two hold 5.9% and 5.4%.',tag:'primary',src:'TrendForce press release, 9 Sep 2026 (primary). It does not state the share denominator.'},
+  {t:'TrendForce does not say what the share is of. It is not a share of the top-10 total of $53.49B, which would be about 75%, so check the denominator before comparing.',tag:'framework',src:'My arithmetic on the TrendForce figures'},
+  {t:'Peer-reviewed work finds that export controls and sanctions turned chokepoints such as advanced lithography and leading-edge foundries into systemic vulnerabilities.',tag:'research',src:'Jamshed et al., 2025. A 2024 review (Xiong et al.) covers supply-chain vulnerabilities more broadly.'}],
+ legal:['Supply agreements and design licences, with export controls and competition law on top (framework).','Watch: licensing limits on advanced chips and tools. I did not check current US rules in this pass.']});
+setNode('mem',{
+ facts:[
+  {t:'The top HBM supplier holds about 50% of revenue and the second about 33% (Q2 2026).',tag:'estimate',src:'Research firm (Counterpoint), Sep 2026. Seen only in a headline; the full report was not readable'},
+  {t:'Advanced packaging supply is reported as tight, and some lead times are lengthening. Capacity estimates for 2026 differ: more than 130,000 wafers a month in one analyst estimate, about 106,000 in another. Only the CEO’s comment on packaging yields is confirmed by the company.',tag:'secondary',src:'TrendForce News, 27 Oct 2026, citing press and analysts'}]});
+setNode('chips',{
+ facts:[
+  {t:'A chip vendor can sell hardware to a customer, hold equity in it, buy its capacity and guarantee some of its lease payments. BIS gives no figure for how common this is.',tag:'primary',src:'BIS Bulletin 140 (primary)'},
+  {t:'One vendor signed memoranda of understanding with six investment firms to set up platforms that aim to raise more than $500B of third-party capital over time, and may support residual value on up to 25% of a project.',tag:'primary',src:'BIS Bulletin 140, footnote (primary)'}],
+ legal:['Vendor financing uses guarantees, equity and residual-value support (BIS).','Watch: round-tripping scrutiny, where money loops back as revenue. The IMF describes a circular funding structure.']});
+setNode('dc',{
+ facts:[
+  {t:'Data-centre electricity use is projected to rise from about 485 TWh in 2025 to about 950 TWh in 2030, around 3% of world demand. It grew 17% in 2025.',tag:'primary',src:'IEA, Key Questions on Energy and AI (primary)'},
+  {t:'Published estimates of global data-centre electricity use for 2020 range from 196 to 1,200 TWh, a sixfold gap, so any projection carries wide error.',tag:'research',src:'Wang et al., Engineering, 2026'},
+  {t:'A 2020 study found that earlier extrapolations overstated data-centre energy growth because efficiency gains offset rising demand. (My addition: AI workloads may change that.)',tag:'research',src:'Masanet et al., Science, 2020'}]});
+setNode('grid',{
+ facts:[
+  {t:'About 2,500 GW of renewable, large-load and storage projects are stalled in grid queues worldwide. This is not only data centres.',tag:'primary',src:'IEA Electricity 2026 (primary)'},
+  {t:'Annual grid investment would need to rise about 50% by 2030 from about $400B a year. Data centres take 1 to 3 years to build, grid infrastructure can take 5 to 15.',tag:'primary',src:'IEA Electricity 2026 (primary)'},
+  {t:'Great Britain: contracted demand in the connection queue grew from 41 GW (Nov 2024) to 125 GW (Jun 2025). About 73 GW of it is data centres per the consultation. The press release says at least 80 GW.',tag:'primary',src:'Ofgem consultation, 29 Jul 2026 (primary)'},
+  {t:'Ofgem proposes a data-centre commitment fee of 2.5% to 7.5% of average capex, about £237,500 to £712,500 per MW, for projects of 40 MW or more, plus queue milestones. The consultation closed on 16 Sep 2026.',tag:'primary',src:'Ofgem press release (primary). Ofgem\u2019s page says the consultation is closed and awaiting a decision. In Ofgem\u2019s wording the fee is 2.5% to 7.5% of average project costs. I could not confirm a 40 MW threshold or a decision date on an Ofgem page; they come from secondary summaries.'}],
+ legal:['A GB regulator proposed commitment fees and queue milestones (consultation 29 Jul to 16 Sep 2026, primary). I found no final decision.','Proposed milestones include a credible end-user, long-lead equipment, financial capability and technical readiness (primary).']});
+setNode('labs',{
+ legal:['EU AI Act: a provider develops an AI system and places it on the market or puts it into service under its own name or trademark. A deployer uses one under its authority, except for personal non-professional activity (Art. 3, primary text).','Stand-alone high-risk duties move from 2 Aug 2026 to 2 Dec 2027, and embedded products to 2 Aug 2028. EUR-Lex shows these dates in Article 113 as amended by Regulation (EU) 2026/1744 (Official Journal, 24 Jul 2026).','GDPR: EDPB Opinion 28/2024 says AI models are not automatically anonymous, and legitimate interest needs a three-step test (EDPB document).']});
+ev('foundry_mem',{t:'Advanced packaging supply is reported as tight, with some lead times lengthening. Estimates of 2026 capacity differ.',tag:'secondary',src:'TrendForce News, Oct 2026, citing press and analysts'});
+ev('mem_chips',{t:'The top two HBM suppliers hold about 50% and 33% of revenue (Q2 2026).',tag:'estimate',src:'Research firm'});
+ev('fund_labs',{t:'The IMF counts about $300B of equity and $650B of debt in 14 AI deals since 2023, against $1.4T of future revenue commitments.',tag:'primary',src:'IMF, Oct 2026 (primary)'});
+ev('fund_cloud',{t:'The five largest US hyperscalers issued $222B of gross bonds by September 2026.',tag:'primary',src:'BIS Bulletin 140 (primary)'});
+ev('fund_dc',{t:'Lease commitments were about $1.2T by mid-2026, with about $820B not yet started. Off-balance-sheet-linked bonds and ABS totalled $75B to $100B so far this year (market sources cited by BIS).',tag:'secondary',src:'Rating agency and market figures quoted in BIS Bulletin 140'});
+ev('cloud_chips',{t:'The five largest US hyperscalers are expected to spend more than $800B of capex in 2026.',tag:'primary',src:'BIS Bulletin 140 (primary)'});
+ev('fund_chips',{t:'Vendors can sell hardware, hold equity, buy capacity and guarantee leases. BIS and the IMF both flag the interlinks. BIS gives no figure for how common vendor financing is. A checker reading the IMF Global Financial Stability Report found about $320B of the $650B of debt sitting in circular financing deals.',tag:'primary',src:'BIS Bulletin 140 and IMF (primary)'});
+ev('dc_wo',{t:'Residual-value guarantees are typically capped, and a lease non-renewal may coincide with similar capacity coming on offer.',tag:'primary',src:'BIS Bulletin 140 (primary)'});
+ev('gen_grid',{t:'Annual grid investment would need to rise about 50% by 2030 from about $400B a year.',tag:'primary',src:'IEA Electricity 2026 (primary)'});
+ev('grid_dc',{t:'Data centres take 1 to 3 years to build, while grid infrastructure can take 5 to 15.',tag:'primary',src:'IEA Electricity 2026 (primary)'});
+ev('grid_stall',{t:'About 2,500 GW of renewable, large-load and storage projects are stalled in grid queues worldwide.',tag:'primary',src:'IEA Electricity 2026 (primary). Not only data centres.'});
+ev('dc_gen',{t:'Published data-centre energy estimates for 2020 differ up to sixfold, so demand forecasts are highly uncertain.',tag:'research',src:'Wang et al., Engineering, 2026'});
+ev('rules_foundry',{t:'Peer-reviewed work finds that export controls and sanctions turned chokepoints into systemic vulnerabilities.',tag:'research',src:'Jamshed et al., 2025'});
+ev('rules_labs',{t:'EDPB Opinion 28/2024 (17 Dec 2024): AI models are not automatically anonymous. The AI Act defines providers and deployers in Art. 3.',tag:'primary',src:'EDPB Opinion 28/2024; AI Act Art. 3 text'});
+ev('rules_fund',{t:'Rule 144A lets unregistered securities be resold to qualified institutional buyers, which hold at least $100M in securities.',tag:'primary',src:'17 CFR 230.144A (primary)'});
+ev('rules_grid',{t:'A GB regulator proposed commitment fees and queue milestones for data centres (consultation 29 Jul to 16 Sep 2026). I found no final decision.',tag:'primary',src:'Ofgem (primary)'});
+TOUR[0].facts=['The five largest US hyperscalers issued $222B of gross bonds by September 2026 (BIS, primary).'];
+TOUR[1].facts=['The five largest US hyperscalers are expected to spend more than $800B of capex in 2026 (BIS, primary).'];
+TOUR[4].facts=['About 2,500 GW of renewable, large-load and storage projects sit in grid queues worldwide (IEA, primary).'];
+
+var state={ctx:false,trend:null,layer:'all',types:{uni:true,bi:true,term:true,circ:true},only:null,sel:null,tour:null,scn:null,reveal:null,build:null,level:'beginner',cap:false,playing:!reduced};
+var hintMsg='';
+try{if(localStorage.getItem('ailoop-level')==='expert'){state.level='expert';}}catch(e){}
+
+/* ---------- hypotheses: direction of each flow over the next 12 to 24 months ---------- */
+var REVIEWED='7 Nov 2026';
+var TREND={up:{name:'Rising',glyph:'▲'},down:{name:'Falling',glyph:'▼'},flat:{name:'Flat or stalling',glyph:'■'},mixed:{name:'Contested',glyph:'◆'}};
+var HYP={
+ raw_foundry:['flat','Input supply keeps pace with fab output, so this link is not the binding constraint.','Foundries report no shortages of materials, gases or tools.','Foundries or governments report shortages of inputs.','Foundry results commentary; export-licensing notices.'],
+ design_foundry:['up','More custom AI chips mean more layouts and more joint design work with foundries.','Foundries report more custom-chip design starts.','Custom-chip programmes are cut back or pulled in-house.','Foundry and chip-designer results commentary.'],
+ foundry_mem:['flat','Advanced packaging limits how fast finished chips can grow, so output rises more slowly than demand.','Reports of tight packaging capacity and long lead times continue.','Packaging capacity catches up and lead times shorten.','Industry trade press; foundry capex commentary.'],
+ mem_chips:['up','Accelerator demand pulls memory volumes up with it, because each chip needs memory.','Memory makers report rising high-bandwidth memory sales.','Memory makers report falling orders or growing inventory.','Memory-maker results; market-share trackers.'],
+ chips_dc:['mixed','Racks may arrive faster than buildings and power are ready, so shipped chips can wait unused.','Reports of racks stored while waiting for power.','Buildings are energised as fast as racks arrive.','Operator commentary; chip-maker backlog notes.'],
+ dc_labs:['up','Labs buy more compute as models grow, so payments for capacity rise.','Lease and capacity contracts keep growing.','Labs cancel or shrink capacity contracts.','Lease and offtake disclosures in company filings; BIS Bulletin series.'],
+ labs_cloud:['up','Cloud and app companies embed more model output in their products.','More products are built on lab models.','Buyers switch to in-house models, or demand for model access falls.','Cloud-provider results commentary.'],
+ cloud_users:['mixed','Whether paying customers grow as fast as the spending is the central open question.','Fee revenue growth catches up with capex growth.','Fee revenue stays well below what the build-out needs.','Cloud-provider revenue disclosures against capex guidance.'],
+ users_labs:['up','More usage gives labs more feedback, which improves the next model.','Labs credit usage data for model gains.','Usage grows but model quality does not follow.','Lab research publications; product release notes.'],
+ fund_labs:['up','Funders keep supplying capital that labs spend on the funders’ own compute, which keeps the loop circular.','New deals again pair equity or debt with compute purchases.','Labs raise money with no link to compute purchases.','Deal announcements; IMF and BIS financial-stability reports.'],
+ fund_cloud:['up','Buyers use more debt to fund capex as cash flow covers less of it.','Bond issuance by large buyers keeps rising.','Buyers fund capex mainly from cash flow again.','Company filings; BIS Bulletin series.'],
+ fund_dc:['up','More capacity is built through vehicles that borrow against lease contracts.','New vehicle bonds and loans keep appearing.','Lenders pull back from this structure.','Bond and loan market data; BIS Bulletin series.'],
+ cloud_chips:['up','Buyer capex keeps driving chip orders while demand holds.','Capex guidance is raised again.','Buyers cut or delay capex guidance.','Company capex guidance; BIS Bulletin series.'],
+ fund_chips:['mixed','Suppliers may fund customers to secure orders, which can make demand look stronger than outside demand. This could grow or fade.','More deals where suppliers guarantee leases or hold equity.','Chip orders come from buyers with no supplier financing.','Supplier disclosures on guarantees and equity stakes; IMF and BIS reports.'],
+ users_fund:['mixed','Revenue that returns as funding keeps the loop going. If it lags, funding tightens.','Funding rounds cite rising customer revenue.','Funding becomes harder to raise as revenue lags.','Funding announcements; credit-market spreads.'],
+ dc_wo:['mixed','Write-offs stay latent until a lease is not renewed or demand falls short. They could stay small or become large.','Impairment disclosures or lease terminations appear.','Leases renew and utilisation stays high.','Impairment notes in company filings; BIS Bulletin series.'],
+ gen_grid:['up','New generation and grid build-out must grow to serve the new load.','Grid investment plans increase.','Grid investment plans stay flat while load grows.','Grid-operator investment plans; IEA electricity reports.'],
+ grid_dc:['flat','Connections arrive more slowly than buildings, so power sets the pace of capacity.','Connection waits stay long.','Connection times shorten markedly.','Grid-operator queue statistics; IEA electricity reports.'],
+ grid_stall:['up','The queue of waiting projects grows while connections lag.','Queue size keeps growing.','Queue reforms clear speculative projects and the queue shrinks.','Grid-operator queue statistics; regulator decisions.'],
+ dc_gen:['mixed','Demand forecasts drive new generation. They are highly uncertain, so overbuild and shortfall are both possible.','Generation plans are revised up as demand holds.','Efficiency gains cut demand below forecasts.','IEA electricity reports; peer-reviewed demand estimates.'],
+ uni_labs:['flat','The pipeline of graduates is steady, and competition for experienced staff matters more.','Hiring remains steady.','Labs report sharp hiring cuts or talent shortages.','Lab hiring reports; university enrolment data.'],
+ rd_labs:['up','Open work keeps lowering costs, and labs feed fixes back.','Open model releases keep appearing.','Open releases slow or labs stop contributing.','Open-model release trackers.'],
+ rules_foundry:['mixed','Export and competition rules can tighten or ease with politics, and they reshape who can buy.','New export-control rules are published.','Controls are relaxed.','Government export-control notices.'],
+ rules_labs:['flat','Where AI-specific duties are phased in or deferred, the effect on labs is gradual until they apply.','Duties take effect on the announced dates.','Duties are deferred again or repealed.','Official gazettes and regulator notices. See Who oversees what.'],
+ rules_fund:['mixed','Concern about opacity could bring more disclosure, or private placements could continue as now.','Regulators propose new disclosure rules for these structures.','No change in disclosure rules.','Regulator consultations; BIS and IMF reports.'],
+ rules_grid:['up','Regulators move toward readiness tests and fees to clear speculative queue entries.','Final rules adopt fees and milestones.','Proposals are withdrawn.','Regulator decisions.'],
+ rd_dc:['down','This flow is the compute needed per task. Efficiency methods push it down. Total demand can still rise if cheaper AI is used more, so check both.','Products and papers show less compute per task.','Compute per task stays flat or rises as models grow.','Efficiency papers; product release notes; data-centre capacity commentary.'],
+ labs_users:['down','Competition and cheaper open models push the price per unit of output down. If usage grows faster, revenue can still rise.','Published prices per unit of output keep falling.','Prices stay flat or rise.','Provider price lists; open-model release trackers.'],
+ chips_wo:['mixed','Fast chip generations could shorten useful lives, but older chips may stay useful for lighter tasks. This is contested.','Operators shorten depreciation lives or record hardware impairments.','Operators lengthen useful lives and hardware stays fully used.','Depreciation policy notes in company filings; second-hand chip prices.'],
+ rates_fund:['mixed','Borrowing costs follow central-bank policy and credit spreads, which can move either way.','Credit spreads on AI-linked debt widen or lending terms tighten.','Spreads narrow and terms ease.','Central-bank statements; credit-market spreads; BIS and IMF financial-stability reports.']
+};
+var IND={raw_foundry:'Input lead times and licensing notices. Reported shortages refute it. Review quarterly.',design_foundry:'Custom-chip design starts reported by foundries and chip designers. Rising counts confirm it. Review each earnings season.',foundry_mem:'Advanced-packaging lead times and capacity additions. Lengthening lead times confirm it. Review quarterly.',mem_chips:'Memory makers\u2019 high-bandwidth memory sales and inventory. Sales up with inventory flat confirms it. Review each earnings season.',chips_dc:'Operator reports of racks waiting for power. More such reports confirm it. Review quarterly.',dc_labs:'Disclosed lease and capacity contracts. New or enlarged contracts confirm it. Review each filing.',labs_cloud:'Products built on lab models versus in-house models. A shift to in-house models refutes it. Review quarterly.',cloud_users:'Fee revenue growth against capex growth in provider results. A narrowing gap confirms it. Review each earnings season.',users_labs:'Lab publications crediting usage data for model gains. Review quarterly.',fund_labs:'Deals pairing funding with compute purchases. More of them confirm it. Scan announcements monthly.',fund_cloud:'Bond issuance by large buyers. Rising issuance confirms it. Review monthly.',fund_dc:'New vehicle bonds and loans backed by leases. Continued issuance confirms it. Review monthly.',cloud_chips:'Capex guidance revisions. Upward revisions confirm it. Review each earnings season.',fund_chips:'Supplier guarantees and equity stakes in customers. More disclosures confirm it. Review each filing.',users_fund:'Funding rounds citing customer revenue, and credit spreads. Review quarterly.',dc_wo:'Impairment notes and lease terminations in filings. The first material ones confirm it. Review each filing.',gen_grid:'Grid operators\u2019 investment plans. Upward revisions confirm it. Review annually.',grid_dc:'Connection waiting times. Markedly shorter times refute it. Review twice a year.',grid_stall:'Queue size reported by grid operators. Growth confirms it. Review twice a year.',dc_gen:'Demand forecasts and generation plans. Downward revisions refute it. Review annually.',uni_labs:'Lab hiring reports and enrolment data. Sharp cuts or shortages refute it. Review annually.',rd_labs:'Open-model releases. Continuing releases confirm it. Review monthly.',rules_foundry:'New or repealed export-control notices. Review quarterly.',rules_labs:'Dates on which duties start to apply, in official gazettes. Review at each announced date.',rules_fund:'Regulator consultations on disclosure for these structures. Review twice a year.',rules_grid:'Regulator decisions on queue reform. Review at each decision.',rd_dc:'Compute per task in efficiency papers and product notes. A falling trend confirms it. Review quarterly.',labs_users:'Published price lists per unit of output. A falling trend confirms it. Review quarterly.',chips_wo:'Depreciation-life changes and impairments in filings. Shorter lives confirm it. Review annually.',rates_fund:'Credit spreads on AI-linked debt. Widening confirms it. Review monthly.'};
+links.forEach(function(l){var h=HYP[l.id];if(!h){throw new Error('missing hypothesis '+l.id);}l.hyp={trend:h[0],t:h[1],yes:h[2],no:h[3],check:h[4],ind:IND[l.id]||''};});
+function trendTag(l){var T=TREND[l.hyp.trend];return '<span class="trend"><span aria-hidden="true">'+T.glyph+'</span> '+T.name+'</span>';}
+
+/* ---------- build map ---------- */
+var svg=document.getElementById('map');
+var defs=S('defs',{},svg);
+var mk=S('marker',{id:'arr',viewBox:'0 0 10 10',refX:'8',refY:'5',markerWidth:'6',markerHeight:'6',orient:'auto-start-reverse'},defs);
+S('path',{d:'M2 1L8 5L2 9',fill:'none',stroke:'context-stroke','stroke-width':'1.6','stroke-linecap':'round','stroke-linejoin':'round'},mk);
+var pat=S('pattern',{id:'dots',width:'24',height:'24',patternUnits:'userSpaceOnUse'},defs);
+S('circle',{cx:'2',cy:'2',r:'1',class:'pat'},pat);
+var bgRect=S('rect',{x:'0',y:'0',width:String(W),height:'640',class:'dotsbg'},svg);
+var gLinks=S('g',{},svg),gNodes=S('g',{},svg),gTip=S('g',{class:'tip',visibility:'hidden'},svg);
+var tipR=S('rect',{rx:'6',height:'24'},gTip),tipT=S('text',{'dominant-baseline':'central'},gTip);
+
+function anchor(n,tx,ty){
+  var dx=tx-n.x,dy=ty-n.y;
+  var sx=dx===0?Infinity:(NW/2+3)/Math.abs(dx),sy=dy===0?Infinity:(NH/2+3)/Math.abs(dy);
+  var s=Math.min(sx,sy);return [n.x+dx*s,n.y+dy*s];
+}
+function geom(l){
+  var a=N[l.from],b=N[l.to],mx=(a.x+b.x)/2,my=(a.y+b.y)/2,cx=mx,cy=my;
+  if(l.curve){var dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||1;cx=mx+(-dy/d)*l.curve;cy=my+(dx/d)*l.curve;}
+  var s=anchor(a,cx,cy),e=anchor(b,cx,cy);
+  var d2=l.curve?('M'+s[0]+' '+s[1]+'Q'+cx+' '+cy+' '+e[0]+' '+e[1]):('M'+s[0]+' '+s[1]+'L'+e[0]+' '+e[1]);
+  var tg=l.curve?[e[0]-cx,e[1]-cy]:[e[0]-s[0],e[1]-s[1]];
+  return {d:d2,ex:e[0],ey:e[1],tg:tg};
+}
+
+links.forEach(function(l){
+  var g=S('g',{class:'lk t-'+l.type+(l.minor?' minor':''),'data-id':l.id},gLinks);
+  var gm=geom(l);
+  var path=S('path',{d:gm.d,class:'line'},g);
+  if(l.type==='uni'||l.type==='circ'){path.setAttribute('marker-end','url(#arr)');}
+  if(l.type==='bi'){path.setAttribute('marker-end','url(#arr)');path.setAttribute('marker-start','url(#arr)');}
+  if(l.type==='term'){
+    var tl=Math.hypot(gm.tg[0],gm.tg[1])||1,ux=gm.tg[0]/tl,uy=gm.tg[1]/tl;
+    l.bar=S('line',{class:'stopbar',x1:gm.ex-uy*12,y1:gm.ey+ux*12,x2:gm.ex+uy*12,y2:gm.ey-ux*12},g);
+  }
+  var hit=S('path',{d:gm.d,class:'hit-link',tabindex:'0',role:'button','aria-label':N[l.from].label+(l.type==='bi'?' and ':' to ')+N[l.to].label+': '+l.label},g);
+  var pg=S('g',{class:'particles'},g);
+  l.g=g;l.path=path;l.hit=hit;l.len=path.getTotalLength();l.fw=[];l.bw=[];
+  l.tb=S('g',{class:'tb tb-'+l.hyp.trend,'aria-hidden':'true'},g);
+  S('circle',{r:'11'},l.tb);
+  var tbt=S('text',{'text-anchor':'middle','dominant-baseline':'central'},l.tb);tbt.textContent=TREND[l.hyp.trend].glyph;
+  var tmp=path.getPointAtLength(l.len/2);l.tb.setAttribute('transform','translate('+tmp.x+' '+tmp.y+')');
+  var per=Math.max(1,Math.round(l.len/95));
+  for(var i=0;i<per;i++){l.fw.push(S('circle',{class:'p',r:'3.4'},pg));}
+  if(l.type==='bi'){for(var j=0;j<per;j++){l.bw.push(S('circle',{class:'p',r:'3.4'},pg));}}
+  l.per=per;
+  function pick(ev){ev.stopPropagation();select('link',l.id);}
+  hit.addEventListener('click',pick);
+  hit.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();pick(ev);}});
+  hit.addEventListener('pointerenter',function(){showTip(l);});
+  hit.addEventListener('pointerleave',function(){hideTip();});
+  hit.addEventListener('focus',function(){showTip(l);});
+  hit.addEventListener('blur',function(){hideTip();});
+});
+
+nodes.forEach(function(n){
+  var g=S('g',{class:'node'+(n.end?' end':''),'data-id':n.id,tabindex:'0',role:'button','aria-label':n.label+'. '+n.role},gNodes);
+  n.rect=S('rect',{x:n.x-NW/2,y:n.y-NH/2,width:NW,height:NH,rx:'10'},g);
+  var t=S('text',{class:'t',x:n.x,y:n.y-5,'text-anchor':'middle'},g);t.textContent=n.label;n.tt=t;
+  var s=S('text',{class:'s',x:n.x,y:n.y+14,'text-anchor':'middle'},g);s.textContent=n.sub;n.ss=s;
+  var b=S('g',{class:'bdg'},g);
+  n.bc=S('circle',{cx:n.x+NW/2-6,cy:n.y-NH/2+2,r:'10'},b);
+  n.bt=S('text',{x:n.x+NW/2-6,y:n.y-NH/2+2,'text-anchor':'middle','dominant-baseline':'central'},b);
+  n.g=g;
+  g.addEventListener('click',function(ev){ev.stopPropagation();select('node',n.id);});
+  g.addEventListener('keydown',function(ev){if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();select('node',n.id);}});
+});
+svg.addEventListener('click',function(){select(null);});
+
+function showTip(l){
+  var p=l.path.getPointAtLength(l.len/2);
+  tipT.textContent=l.label;
+  var w=tipT.getComputedTextLength()+20;
+  var x=Math.max(8,Math.min(curW-8-w,p.x-w/2)),y=Math.max(4,p.y-36);
+  tipR.setAttribute('x',x);tipR.setAttribute('y',y);tipR.setAttribute('width',w);
+  tipT.setAttribute('x',x+10);tipT.setAttribute('y',y+12);
+  gTip.setAttribute('visibility','visible');
+}
+function hideTip(){
+  if(state.sel&&state.sel.kind==='link'&&!state.tour&&!state.scn){showTip(LK[state.sel.id]);}else{gTip.setAttribute('visibility','hidden');}
+}
+
+/* ---------- teaching data: build-up steps, risks and scenario evidence ---------- */
+var BORDER=['phys','comp','money','power','know'];
+links.forEach(function(l){l.fs=Math.min.apply(null,l.layers.map(function(x){return BORDER.indexOf(x);}));});
+LK.cloud_chips.fs=2; /* buyers are introduced in the compute step, so their chip orders appear with the money step */
+nodes.forEach(function(n){n.fs=99;});
+links.forEach(function(l){N[l.from].fs=Math.min(N[l.from].fs,l.fs);N[l.to].fs=Math.min(N[l.to].fs,l.fs);});
+var NRISK={
+ inst:'Rules change and differ by region, so a duty that applies in one place may not apply in another.',
+ uni:'A shortage of trained people slows labs and chip firms.',
+ rd:'Shared work can be reused by rivals, and licences vary.',
+ fund:'Lenders can pull back, or money can loop so that demand looks larger than it is.',
+ labs:'Labs spend on compute before they earn, so a funding or revenue gap reaches them first.',
+ cloud:'Capex is large and front-loaded. If revenue lags, buyers cut orders and the chip chain feels it first.',
+ users:'If customers pay less than the plan assumed, the loop loses its main source of repayment.',
+ design:'Delays in design rules or licences hold up chips even when factories have room.',
+ raw:'A shortage of one input can stop wafer production.',
+ foundry:'One concentrated supplier slowing down, or being restricted, delays everything downstream.',
+ mem:'Memory and packaging capacity can limit how many finished chips exist, and shares are shifting fast.',
+ chips:'Finished racks are useless without a powered building, and vendor financing can hide weak demand.',
+ dc:'Buildings can sit idle without power or tenants, and leases may not be renewed.',
+ wo:'This box is the loss itself: capital that does not earn a return.',
+ gen:'New supply takes time to build, so demand can outrun it.',
+ grid:'Connection queues and long build times can stall projects for years.',
+ stall:'Projects wait for a connection and earn nothing in the meantime.'};
+var LRISK={
+ cloud_chips:'If buyers cut capex, chip orders fall first.',
+ fund_chips:'Money can loop back as orders, so demand can look larger than outside demand.',
+ dc_wo:'Debt and equity stop earning anything.',
+ grid_stall:'A built shell with no connection earns nothing.',
+ users_fund:'If revenue is too small, the next round of funding gets harder.',
+ cloud_users:'If customers pay less than the plan assumed, the loop loses its main source of repayment.',
+ foundry_mem:'A slow packaging step limits how many finished chips exist.'};
+var TYPERISK={uni:'If this flow slows, the box it feeds has to wait.',bi:'If either side stops, the other loses something it depends on.',term:'This is where the flow stops, so its value is lost or has to wait.',circ:'If the loop breaks, the next round starts weaker.'};
+var TRISK=[
+ 'Lenders can pull back, or money can loop so that demand looks larger than it is.',
+ 'If buyers cut capex, chip orders fall first.',
+ 'One concentrated step slowing down delays everything downstream.',
+ 'Buildings can sit idle without power, and leases may not be renewed.',
+ 'Connection queues can stall finished buildings for years.',
+ 'Labs spend on compute before they earn, so a funding gap reaches them first.',
+ 'If customers pay less than the plan assumed, funding gets harder.',
+ 'This step is the risk summary: stalled builds, write-offs and revenue that is too small.',
+ 'Rules change and differ by region, so verify dates and scope.'];
+var SEV={
+ power:{t:'About 2,500 GW of renewable, large-load and storage projects are stalled in grid queues worldwide.',tag:'primary',src:'IEA Electricity 2026'},
+ debt:{t:'The five largest US hyperscalers issued $222B of gross bonds by September 2026.',tag:'primary',src:'BIS Bulletin 140'},
+ revenue:{t:'Bain estimated that about $2T of annual AI revenue is needed by 2030, and that the world is about $800B short.',tag:'primary',src:'Bain & Company press release, Sep 2025'},
+ chips:{t:'The top foundry holds a 72.5% market share (Q2 2026).',tag:'primary',src:'TrendForce press release'}};
+var BUILD=[
+ {title:'Physical supply',plain:'Chips are made in a chain: raw materials, then a foundry, then memory and packaging, then chips and servers, then data centres.',
+  connects:'Chip design and the foundry swap files and rules both ways. Finished racks end up in data centres, which is where the physical chain stops for now.',
+  ev:[{t:'The top foundry holds a 72.5% market share (Q2 2026).',tag:'primary',src:'TrendForce press release'},{t:'The top two HBM suppliers hold about 50% and 33% of revenue (Q2 2026).',tag:'estimate',src:'Research firm'},{t:'Advanced packaging supply is reported as tight, and capacity estimates differ.',tag:'secondary',src:'TrendForce News, Oct 2026'}],
+  risk:'One concentrated step slowing down, or being restricted, delays everything downstream.'},
+ {title:'Compute and service',plain:'Data centres sell compute to AI labs. Labs build models, cloud and app companies sell services to users, and usage feeds the next model.',
+  connects:'Compute and payments move both ways between data centres and labs. Fees come back from users. Usage loops back to the labs.',
+  ev:[{t:'No sourced figure found for these links. The one revenue estimate sits on the Users box.',tag:'framework',src:''}],
+  risk:'If users pay less than the plan assumed, the rest of the loop strains.'},
+ {title:'Money',plain:'Investors, lenders and strategic funds pay for labs, buyers and buildings. Buyers order chips, vendors sometimes finance buyers, and revenue is meant to recycle into funding.',
+  connects:'Equity and debt flow in. Orders flow to chip makers. Vendor financing and lab deals run both ways, so some money loops back as demand.',
+  ev:[{t:'The five largest US hyperscalers are expected to spend more than $800B of capex in 2026.',tag:'primary',src:'BIS Bulletin 140'},{t:'They issued $222B of gross bonds by September 2026.',tag:'primary',src:'BIS Bulletin 140'},{t:'14 AI-related deals since 2023: about $300B of equity and $650B of debt for $1.4T of future revenue commitments.',tag:'primary',src:'IMF, Oct 2026'}],
+  risk:'Circular financing can make demand look larger than it is, and debt that is not repaid ends in write-offs.'},
+ {title:'Power',plain:'Data centres need electricity and a grid connection. Generation feeds the grid, and the grid decides who connects and when.',
+  connects:'Power and connection requests move both ways between the grid and data centres. A queue can end in stalled builds. Demand forecasts loop back into new generation.',
+  ev:[{t:'About 2,500 GW of renewable, large-load and storage projects are stalled in grid queues worldwide.',tag:'primary',src:'IEA Electricity 2026'},{t:'Data centres take 1 to 3 years to build and grid infrastructure can take 5 to 15.',tag:'primary',src:'IEA Electricity 2026'},{t:'Great Britain’s demand queue grew from 41 GW to 125 GW between Nov 2024 and Jun 2025.',tag:'primary',src:'Ofgem'}],
+  risk:'Finished buildings can wait years for a connection and earn nothing.'},
+ {title:'Knowledge and rules',plain:'Universities and open work supply people and ideas. Institutions set rules over every layer.',
+  connects:'Graduates are hired and that flow ends there. Shared code returns as improvements. Rules flow one way, from institutions to each layer.',
+  ev:[{t:'Rule 144A lets unregistered securities be resold to qualified institutional buyers.',tag:'primary',src:'17 CFR 230.144A'},{t:'AI Omnibus: stand-alone high-risk duties apply from 2 Dec 2027 under Article 113 as amended by Regulation (EU) 2026/1744 (Official Journal, 24 Jul 2026).',tag:'primary',src:'EUR-Lex, consolidated AI Act and Regulation (EU) 2026/1744'},{t:'Ofgem proposed commitment fees and queue milestones for data centres. I found no final decision.',tag:'primary',src:'Ofgem consultation'}],
+  risk:'Rules change and differ by region, so verify dates, scope and jurisdiction.'}];
+
+/* ---------- depth levels, glossary and technical notes ---------- */
+var XP={
+ fund:{t:'Structures include project bonds, private credit and off-balance-sheet vehicles. Lease commitments are disclosed in notes but not recorded as debt, and guarantees are often carried at little or no value (BIS).',tag:'primary'},
+ cloud:{t:'BIS counts the five largest US hyperscalers. Other tallies use different company sets, dates and capex definitions, so compare like with like.',tag:'framework'},
+ foundry:{t:'TrendForce does not state what its 72.5% is a share of. It is not a share of the top-10 total of $53.49B (that would be about 75%), so check the denominator before comparing.',tag:'framework'},
+ mem:{t:'HBM stacks memory dies and is joined to the processor with advanced 2.5D packaging. Both steps are capacity-limited.',tag:'secondary'},
+ chips:{t:'Vendor financing can combine hardware sales, equity stakes, capacity purchases, lease guarantees and residual-value support (BIS).',tag:'primary'},
+ dc:{t:'Annual energy (TWh) understates timing risk. Connection capacity (MW or GW) and queue position decide when a building can start.',tag:'framework'},
+ grid:{t:'Queue reform is moving from first-come-first-served toward readiness tests. Commitment fees and milestones were proposed in Great Britain.',tag:'primary'},
+ labs:{t:'One firm can be a provider for its own models and a deployer for tools it uses, so duties can stack.',tag:'framework'},
+ users:{t:'The $2T and the $800B are Bain’s estimate of need and gap. They are not observed revenue, profit or cash flow.',tag:'framework'}};
+/* ---------- figure-free evidence: states what a source says, never a number ---------- */
+var J=function(t,tag,src){return {t:t,tag:tag,src:src||''};};
+var FR1=J('Large buyers are raising more of their capex through bonds, and some of the debt sits in vehicles outside their main accounts.','primary','BIS Bulletin 140');
+setNode('fund',{facts:[FR1,
+ J('BIS gives no share of capex funded by debt. It says only that a rising share is financed with long-term debt.','primary','BIS Bulletin 140'),
+ J('The IMF reviewed AI deals in which equity and debt flowed in exchange for future revenue commitments, and it describes a circular funding structure between AI firms.','primary','IMF, Oct 2026'),
+ J('Data-centre lease commitments are large, and much of them relate to leases that have not started.','primary','Rating-agency figure quoted in BIS Bulletin 140')]});
+setNode('cloud',{facts:[J('The largest US buyers’ capex is large enough to be a visible share of US output.','primary','BIS Bulletin 140'),J('BIS does not say how much of that capex is funded by debt.','primary','BIS Bulletin 140')]});
+setNode('users',{facts:[J('A consulting estimate says the revenue needed to fund compute scaling is well above what exists, leaving a gap. It is an estimate of need, not observed revenue.','primary','Bain & Company press release, Sep 2025')]});
+setNode('foundry',{facts:[J('One foundry holds a dominant market share and the next two are far behind. The report does not say what the share is of.','primary','TrendForce press release, Sep 2026'),
+ J('Peer-reviewed work finds that export controls and sanctions turned chokepoints such as advanced lithography and leading-edge foundries into systemic vulnerabilities.','research','Jamshed et al., 2025. A 2024 review (Xiong et al.) covers supply-chain vulnerabilities more broadly.')]});
+setNode('mem',{facts:[J('One memory supplier leads in high-bandwidth memory and a second is closing the gap. Seen only in a headline.','estimate','Research firm, Sep 2026'),
+ J('Advanced packaging supply is reported as tight and some lead times are lengthening. Capacity estimates differ between analysts.','secondary','TrendForce News, Oct 2026')]});
+setNode('chips',{facts:[J('A chip vendor can sell hardware to a customer, hold equity in it, buy its capacity and guarantee some of its lease payments. BIS gives no figure for how common this is.','primary','BIS Bulletin 140'),
+ J('One vendor signed memoranda of understanding with six investment firms for platforms that aim to raise outside AI capital, and said it may support residual value on part of a project.','primary','BIS Bulletin 140, footnote')]});
+setNode('dc',{facts:[J('Data-centre electricity use is projected to roughly double by 2030 and grew strongly in 2025.','primary','IEA, Key Questions on Energy and AI'),
+ J('Published estimates of global data-centre electricity use for the same year differ by a large multiple, so any projection carries wide error.','research','Wang et al., Engineering, 2026'),
+ J('A 2020 study found that earlier extrapolations overstated data-centre energy growth because efficiency gains offset rising demand. (My addition: AI workloads may change that.)','research','Masanet et al., Science, 2020')]});
+setNode('grid',{facts:[J('A very large volume of renewable, large-load and storage projects is stalled in grid queues worldwide. This is not only data centres.','primary','IEA Electricity 2026'),
+ J('Annual grid investment would need to rise materially by 2030. Data centres take a few years to build, while grid infrastructure takes many more.','primary','IEA Electricity 2026'),
+ J('Great Britain: contracted demand in the connection queue grew several-fold in under a year, and much of it is data centres.','primary','Ofgem press release'),
+ J('Ofgem proposes a commitment fee and queue milestones for large data-centre projects. The consultation has closed. I found no final decision.','primary','Ofgem press release; project-size threshold not confirmed on an Ofgem page I read')]});
+ev('foundry_mem',J('Advanced packaging supply is reported as tight, with some lead times lengthening.','secondary','TrendForce News, Oct 2026'));
+ev('mem_chips',J('One memory supplier leads high-bandwidth memory and a second is closing the gap.','estimate','Research firm, Sep 2026 (headline only)'));
+ev('cloud_users',J('A consulting estimate says the revenue needed to fund compute scaling is well above what exists. It is an estimate of need, not observed revenue.','primary','Bain & Company, Sep 2025'));
+ev('fund_labs',J('The IMF reviewed AI deals where equity and debt flowed in exchange for future revenue commitments, and it describes a circular funding structure.','primary','IMF, Oct 2026'));
+ev('fund_cloud',J('Large buyers are issuing bonds at a high rate, and a rising share of AI capex is financed with long-term debt.','primary','BIS Bulletin 140'));
+ev('fund_dc',J('Lease commitments are large, and much relates to leases not yet started. Bonds linked to off-balance-sheet vehicles add to the debt.','primary','BIS Bulletin 140, quoting a rating agency'));
+ev('cloud_chips',J('The largest US buyers expect to spend heavily on capex this year. This is the demand signal for chips.','primary','BIS Bulletin 140'));
+ev('gen_grid',J('Annual grid investment would need to rise materially by 2030.','primary','IEA Electricity 2026'));
+ev('grid_dc',J('Data centres take a few years to build, while grid infrastructure takes many more.','primary','IEA Electricity 2026'));
+ev('grid_stall',J('A very large volume of projects is stalled in grid queues worldwide. It is not only data centres.','primary','IEA Electricity 2026'));
+ev('dc_gen',J('Published estimates for the same year differ by a large multiple, so demand forecasts are highly uncertain.','research','Wang et al., Engineering, 2026'));
+ev('rules_fund',J('Rule 144A lets unregistered securities be resold to large institutions that meet the SEC size test.','primary','17 CFR 230.144A'));
+ev('rules_grid',J('A GB regulator proposed commitment fees and queue milestones for data centres. The consultation has closed. I found no final decision.','primary','Ofgem'));
+TOUR[0].facts=['Large buyers are raising more of their capex through bonds (BIS, primary).'];
+TOUR[1].facts=['The largest US buyers expect to spend heavily on capex this year (BIS, primary).'];
+TOUR[4].facts=['A very large volume of projects is stalled in grid queues worldwide, and it is not only data centres (IEA, primary).'];
+TOUR[6].facts=['A consulting estimate says needed revenue is well above what exists, leaving a gap (Bain, Sep 2025).'];
+BUILD[0].ev=[J('One foundry holds a dominant market share.','primary','TrendForce press release, Sep 2026'),J('One memory supplier leads high-bandwidth memory and a second is closing in.','estimate','Research firm, Sep 2026'),J('Advanced packaging supply is reported as tight, and capacity estimates differ.','secondary','TrendForce News, Oct 2026')];
+BUILD[2].ev=[J('The largest US buyers expect to spend heavily on capex this year.','primary','BIS Bulletin 140'),J('Large buyers are issuing bonds at a high rate.','primary','BIS Bulletin 140'),J('The IMF reviewed AI deals where equity and debt flowed in exchange for future revenue commitments.','primary','IMF, Oct 2026')];
+BUILD[3].ev=[J('A very large volume of projects is stalled in grid queues worldwide.','primary','IEA Electricity 2026'),J('Data centres take a few years to build and grid infrastructure takes many more.','primary','IEA Electricity 2026'),J('Great Britain’s demand queue grew several-fold in under a year.','primary','Ofgem')];
+BUILD[4].ev=[J('Rule 144A lets unregistered securities be resold to large institutions.','primary','17 CFR 230.144A'),J('AI Omnibus: stand-alone high-risk duties apply from Dec 2027 (Regulation (EU) 2026/1744).','primary','EUR-Lex'),J('Ofgem proposed commitment fees and queue milestones for data centres. I found no final decision.','primary','Ofgem consultation')];
+SEV.power=J('A very large volume of projects is stalled in grid queues worldwide.','primary','IEA Electricity 2026');
+SEV.debt=J('Large buyers are issuing bonds at a high rate, and a rising share of AI capex is financed with long-term debt.','primary','BIS Bulletin 140');
+SEV.revenue=J('A consulting estimate says needed revenue is well above what exists, leaving a gap.','primary','Bain & Company, Sep 2025');
+SEV.chips=J('One foundry holds a dominant market share.','primary','TrendForce press release, Sep 2026');
+XP.users={t:'The revenue gap is Bain’s estimate of need, not observed revenue, profit or cash flow.',tag:'framework'};
+XP.foundry={t:'TrendForce does not state what its share is of, so check the denominator before comparing.',tag:'framework'};
+ideasList=function(){return '<ol class="steps">'
+  +'<li><b>Money builds capacity.</b> Large buyers plan heavy capex and fund more of it with debt. <span class="tag tag-primary">Primary</span></li>'
+  +'<li><b>Chips and power are the bottlenecks.</b> Chip making is concentrated in a few firms, and projects wait in grid queues. <span class="tag tag-primary">Primary</span></li>'
+  +'<li><b>Revenue must close the loop.</b> Customer fees and usage feed back into funding. Whether revenue catches up with spending is the open question. <span class="tag">My framework</span></li></ol>';};
+/* ---------- jurisdiction-neutral core; authorities listed separately for USA, EU and Korea ---------- */
+setNode('fund',{legal:['Instruments: equity, project bonds, private credit, guarantees.','Private placements can be resold to large institutions without full public registration in some jurisdictions. Example, USA: Rule 144A (17 CFR 230.144A, primary).','A special-purpose vehicle can own the data centre and earn its income from the contracts it has signed (BIS Bulletin 140, primary; it analyses US firms).','Unstarted leases are disclosed but not recorded as debt, and guarantees are often carried at little or no value (BIS).','Watch: opacity, which BIS says could make the market for this debt freeze in stress.']});
+setNode('foundry',{legal:['Supply agreements and design licences, with export controls and competition law on top (framework).','Watch: licensing limits on advanced chips and tools. These differ by jurisdiction and change often. I did not check current rules in this pass. See Who oversees what.']});
+setNode('grid',{legal:['Connection rules and queue reforms differ by country. Example, Great Britain: the national regulator proposed commitment fees and queue milestones (consultation 29 Jul to 16 Sep 2026, primary). I found no final decision.','Proposed milestones include a credible end-user, long-lead equipment, financial capability and technical readiness (primary).']});
+setNode('labs',{legal:['Duties differ by jurisdiction and by role, such as provider or deployer. See Who oversees what.','Example, EU AI Act: a provider develops an AI system and places it on the market or puts it into service under its own name or trademark. A deployer uses one under its authority, except for personal non-professional activity (Art. 3, primary text).','Example, EU: Regulation (EU) 2026/1744 moves stand-alone high-risk duties from 2 Aug 2026 to 2 Dec 2027, and embedded products to 2 Aug 2028 (Article 113 in EUR-Lex).','Example, EU GDPR: EDPB Opinion 28/2024 says AI models are not automatically anonymous, and legitimate interest needs a three-step test (EDPB document).','Example, Korea: the ministry says the AI Basic Act took effect on 22 Jan 2026 and that it will give at least one year before enforcement and defer fact-finding investigations and penalties, except in highly exceptional cases such as loss of life, human-rights violations or serious social harm.']});
+ev('rules_labs',J('AI-specific and data-protection duties differ by jurisdiction and role. Examples: EU AI Act definitions of provider and deployer (Art. 3 text), and an EDPB opinion on AI models (EDPB document).','primary','AI Act Art. 3 text; EDPB Opinion 28/2024'));
+ev('rules_fund',J('Rules on private resale of securities and on disclosure differ by jurisdiction. Example, USA: Rule 144A lets unregistered securities be resold to large institutions that meet the SEC size test.','primary','17 CFR 230.144A'));
+ev('rules_grid',J('Connection and queue rules differ by country. Example, Great Britain: the national regulator proposed commitment fees and queue milestones for data centres. The consultation has closed. I found no final decision.','primary','Ofgem'));
+BUILD[4].ev=[J('Private-resale and disclosure rules differ by jurisdiction. Example, USA: Rule 144A lets unregistered securities be resold to large institutions.','primary','17 CFR 230.144A'),J('AI and data duties differ by jurisdiction and are being phased in or deferred in some places. See Who oversees what.','framework','My framework'),J('Example, Great Britain: the grid regulator proposed commitment fees and queue milestones for data centres. I found no final decision.','primary','Ofgem consultation')];
+var GLOSSX={k:'bis',t:'BIS (two meanings)',re:/\bBIS\b/,d:'Here BIS mostly means the Bank for International Settlements, a body of central banks whose bulletins are cited as sources. The US Commerce Department also has a Bureau of Industry and Security, also shortened to BIS, which runs export controls. The authority list spells that one out.'};
+
+/* ---------- who oversees what: USA, EU, Korea. Tags: primary = official page opened; secondary = press page opened; pages the assistant could not read were checked by the page author. ---------- */
+var DOM=[['ai','AI-specific rules and safety'],['data','Data protection and privacy'],['comp','Competition and consumer protection'],['fin','Financial disclosure and stability'],['trade','Export controls and industrial policy'],['energy','Grid and energy']];
+var JUR=[['all','All'],['us','USA'],['eu','EU'],['fr','France'],['kr','Korea']];
+var JNAME={us:'USA',eu:'EU',fr:'France',kr:'Korea'};
+var IEA='https://iea.blob.core.windows.net/assets/b3a8a809-6cd0-4e12-bbc3-8069f4679d6a/Korea2025.pdf';
+var GOVAI='https://digital-strategy.ec.europa.eu/en/policies/ai-act-governance-and-enforcement',KRACT='https://elaw.klri.re.kr/eng_mobile/viewer.do?hseq=73499&type=part&key=18';
+var A=[
+ ['ai','us','NIST, Center for AI Standards and Innovation (CAISI)','Develops voluntary guidelines and runs evaluations of AI systems, and describes itself as industry\u2019s main contact inside the federal government. The URL now redirects to a page titled \u201cCenter for Advancing Innovation and Standards for Super Intelligence (CAISSI)\u201d, while NIST news items on the same page still say CAISI. Check the current name.','primary','NIST CAISI page','https://nist.gov/caisi'],
+ ['ai','eu','European Commission, AI Office','Described on the Commission page as working with national market surveillance authorities on implementing, supervising and enforcing the AI Act.','primary','Commission, AI Act governance and enforcement',GOVAI],
+ ['ai','eu','National market surveillance authorities','Supervise and enforce compliance of AI systems at national level, including the prohibitions and the high-risk rules. The Commission page says Member States were to designate national competent authorities by 2 Aug 2025.','primary','Commission, AI Act governance and enforcement',GOVAI],
+ ['ai','eu','European AI Board, Scientific Panel, Advisory Forum','Advisory bodies: Member State representatives, independent experts, and commercial and non-commercial stakeholders.','primary','Commission, AI Act governance and enforcement',GOVAI],
+ ['ai','eu','Fundamental-rights authorities, notifying authorities, European Data Protection Supervisor','Fundamental-rights bodies supervise duties that protect fundamental rights. Notifying authorities designate and supervise notified bodies, which assess conformity before sale. The Data Protection Supervisor shares enforcement with the AI Office.','primary','Commission, AI Act governance and enforcement',GOVAI],
+ ['ai','kr','Minister of Science and ICT (MSIT)','Draws up the national AI master plan (Art. 6). May designate the AI Policy Center (Art. 11) and operate the AI Safety Institute (Art. 12).','primary','Act text (English translation, not authoritative)',KRACT],
+ ['ai','kr','MSIT, AI Basic Act enforcement and grace period','MSIT\u2019s English page says the AI Basic Act and its Enforcement Decree take effect on 22 Jan 2026, and that MSIT will give at least one year before enforcement begins, deferring fact-finding investigations and penalties except in highly exceptional cases such as loss of life, human-rights violations or serious social harm. That page gives no fine amounts and does not describe MSIT\u2019s enforcement powers.','primary','MSIT, AI Basic Act comes into force (English)','https://www.msit.go.kr/eng/bbs/view.do?sCode=eng&mId=4&mPid=2&bbsSeqNo=42&nttSeqNo=1214'],
+ ['ai','kr','South Korea AI rules, independent register summary','An independent register (page reviewed 2 Nov 2026, not an official source, states it is not legal advice) reports: administrative fines up to KRW 30 million, for example for not disclosing AI use or not appointing a domestic representative; foreign operators above set thresholds must appoint a domestic representative; high-impact AI covers sectors such as healthcare, energy, employment, credit and public administration; providers must notify users of AI interaction and label generative output. It also reports Act No. 21311 (20 Jan 2026), in force 21 Jul 2026, adding public-sector adoption duties and AI research institutes. The official English translation supports the KRW 30 million fine ceiling (see the legal texts list). I did not check the revenue and user thresholds.','secondary','Artificial Intelligence Regulations, South Korea page','https://artificialintelligenceregulations.com/jurisdictions/south-korea.html'],
+ ['ai','kr','Presidential Council on National AI Strategy','Set up under the President (Art. 7) to deliberate national AI strategy (Art. 8).','primary','Act text (English translation)',KRACT],
+ ['ai','kr','AI Policy Center and AI Safety Institute','Designated or operated by the Minister: technical support for the master plan and AI policy, and social-impact studies (Art. 11), and AI safety (Art. 12).','primary','Act text (English translation)',KRACT],
+ ['data','us','Federal Trade Commission','Its mission is to enforce the law against anticompetitive, unfair and deceptive business practices. I did not check what it has done on AI.','primary','FTC mission page','https://www.ftc.gov/about-ftc/mission'],
+ ['data','us','State attorneys general and state privacy regulators','Massachusetts\u2019s Attorney General issued an advisory on 16 Apr 2024 saying state consumer-protection, anti-discrimination and data-security law applies to AI, and that her office intends to enforce it. A National Association of Attorneys General release (26 Nov 2025) (not linked here) reports 36 attorneys general, counting D.C. and territories, urging Congress not to pass a federal moratorium on state AI laws. I read one state advisory and one association release, not every state.','primary','Massachusetts Attorney General, AI advisory (16 Apr 2024)','https://www.mass.gov/news/ag-campbell-issues-advisory-providing-guidance-on-how-state-consumer-protection-and-other-laws-apply-to-artificial-intelligence'],
+ ['data','eu','European Data Protection Board (EDPB)','An independent European body that makes sure the GDPR and the Law Enforcement Directive are applied uniformly, and coordinates cooperation among authorities, including on enforcement.','primary','EDPB, About','https://www.edpb.europa.eu/about-edpb_en'],
+ ['data','eu','EDPB Opinion 28/2024 on AI models','Adopted 17 Dec 2024 at the request of the Irish supervisory authority under Article 64(2) GDPR. It answers questions on when an AI model is anonymous, on legitimate interest as a legal basis in development and deployment, and on the effect of unlawful processing during development. I read the opening of the opinion, not all of it.','primary','EDPB, Opinion 28/2024 (PDF)','https://www.edpb.europa.eu/system/files/2024-12/edpb_opinion_202428_ai-models_en.pdf'],
+ ['data','eu','National data protection authorities','Supervise the GDPR in each Member State (the EDPB page lists them but does not itself state their enforcement role). The EDPB members page lists the national authorities of the 27 Member States, plus Iceland, Liechtenstein and Norway for GDPR matters, and the European Data Protection Supervisor.','primary','EDPB, Our members','https://www.edpb.europa.eu/about-edpb/our-members_en'],
+ ['data','kr','Personal Information Protection Commission (PIPC)','A Korean government body. Its English site invites public input on protecting and using personal information in the era of AI, and promotes a 2026 global AI privacy forum. I did not open its generative-AI guidelines.','primary','PIPC English site','https://pipc.go.kr/eng/index.do'],
+ ['comp','us','Federal Trade Commission','Protects consumers and competition through enforcement, advocacy and education (mission page).','primary','FTC mission page','https://www.ftc.gov/about-ftc/mission'],
+ ['comp','us','Department of Justice, Antitrust Division','Its stated mission is to promote economic competition by enforcing and giving guidance on the antitrust laws. The page I read lists civil and criminal enforcement programs but did not describe merger review.','primary','DOJ Antitrust Division, About','https://www.justice.gov/atr/about'],
+ ['comp','eu','European Commission (competition) and national competition authorities','Through the European Competition Network the Commission and national authorities share powers to apply Articles 101 and 102 TFEU. Once the Commission opens formal proceedings, national authorities cannot run parallel ones. Merger cooperation runs through the EU Merger Working Group.','primary','Commission, European Competition Network','https://competition-policy.ec.europa.eu/antitrust-and-cartels/european-competition-network/background_en'],
+ ['comp','kr','Korea Fair Trade Commission (KFTC)','Korea\u2019s competition authority. Official site checked by the page author on 7 Nov 2026. The assistant read its English home page (cached 6 Nov 2026), which confirms the identity but shows nothing on an AI survey. A press report says it launched an AI service market survey on 21 May 2026, which is not verified against a KFTC document.','primary','KFTC English site','https://www.ftc.go.kr/eng/index.do'],
+ ['fin','us','Securities and Exchange Commission','US securities regulator. The linked page is the rule only: Rule 144A lets unregistered securities be resold to large institutions. eCFR calls itself authoritative but unofficial. The SEC\u2019s wider functions are not shown on this page.','primary','17 CFR 230.144A (the rule only, not the agency page)','https://www.ecfr.gov/current/title-17/section-230.144A'],
+ ['fin','eu','European supervisory authorities (ESMA, EBA, EIOPA) and the European Central Bank','ESMA covers securities markets, the EBA banks and payment institutions, EIOPA insurance and pensions. The ECB directly supervises the largest banks under the Single Supervisory Mechanism.','primary','European Parliament factsheet, European System of Financial Supervision','https://www.europarl.europa.eu/factsheets/en/sheet/84/europaisches-system-der-finanzaufsicht-esfs-'],
+ ['fin','kr','Financial Services Commission (FSC)','Its stated functions: financial policy, supervision of institutions and markets (including licensing and investigating unlawful conduct), consumer protection, and strengthening the financial industry.','primary','FSC English site, About','https://fsc.go.kr/eng/ab010101'],
+ ['fin','kr','Financial Supervisory Service (FSS)','Korea\u2019s Financial Supervisory Service. Official site checked by the page author on 7 Nov 2026. The assistant read its English home page, which confirms it is the FSS. That page does not describe it as the FSC\u2019s supervisory counterpart.','primary','FSS English site','https://english.fss.or.kr'],
+ ['trade','us','Commerce Department, Bureau of Industry and Security (the US one, not the Bank for International Settlements)','States its aim as an effective export-control and treaty-compliance system. Its news page lists chip actions, for example a licensing-policy change for certain advanced chips to China (13 Jan 2026) and a status upgrade for the UAE (10 Jul 2026). I did not read the underlying rules.','primary','BIS news and updates (read 7 Nov 2026)','https://www.bis.gov/news-updates'],
+ ['trade','eu','Member-state competent authorities, with the European Commission','Member-state authorities grant dual-use export authorisations. The Commission holds consultations and updates the EU control list by delegated regulation.','primary','Commission trade policy, exporting dual-use items','https://policy.trade.ec.europa.eu/help-exporters-and-importers/exporting-dual-use-items_en'],
+ ['trade','kr','Ministry of Trade, Industry and Resources (MOTIR)','The IEA reports the former trade and energy ministry was renamed in the reorganisation, and gives October 2025 for the creation of the new climate and energy ministry and keeps resource industries, including nuclear exports. A press report (Dec 2025, not linked here and not in the IEA text) describes a restructuring with a new resource-security department and AI-industry teams. I did not open the ministry\u2019s own site.','institution','IEA, Korea 2025 energy policy review',IEA],
+ ['energy','us','Federal Energy Regulatory Commission (FERC) and Department of Energy','A docket on connecting large loads (generally above 20 MW) to the interstate grid. It is an advance notice of proposed rulemaking, not a proposed rule. The Energy Secretary directed FERC on 23 Oct 2025 to consider it, and FERC said it would act by June 2026. The docket page (last updated 22 Jul 2026) shows no later action. FERC issued show-cause orders on large-load interconnection in June 2026 (search results only, not read).','primary','FERC docket RM26-4-000','https://www.ferc.gov/rm26-4'],
+ ['energy','eu','Agency for the Cooperation of Energy Regulators (ACER) and national regulatory authorities','Established in 2011 to foster cooperation among national energy regulators. Its listed tasks: market integration through common EU rules, cross-border infrastructure, wholesale market monitoring, and coordinating regulatory action. The page does not describe transmission operators.','primary','ACER, About','https://acer.europa.eu/the-agency/about-acer'],
+ ['energy','kr','Ministry of Climate, Energy and Environment (MCEE)','The IEA reports it was established in October 2025, took over most energy functions, and is responsible for climate, electricity, grid and energy-transition policy. I did not open the ministry\u2019s own site.','institution','IEA, Korea 2025 energy policy review',IEA]
+];
+var PL=[
+ ['eu','AI Act, Regulation (EU) 2024/1689 (consolidated, 27 Jul 2026)','In Article 113 as amended: general application from 2 Aug 2026; Chapters I and II from 2 Feb 2025, except parts of Article 5 from 2 Dec 2026; high-risk duties for Annex III systems (Article 6(2)) from 2 Dec 2027 and for Annex I products (Article 6(1)) from 2 Aug 2028. EUR-Lex presents consolidated versions as documentation, so the legally binding texts are the original act and the amending act below. The page I opened is in French.','primary','EUR-Lex, consolidated version 27 Jul 2026 (French)','https://eur-lex.europa.eu/eli/reg/2024/1689/2026-07-27/fra'],
+ ['eu','General Data Protection Regulation, Regulation (EU) 2016/679','Adopted 27 Apr 2016, in force 24 May 2016. My reader returned only the title and dates, not the articles, so I did not check any article text.','primary','EUR-Lex, Official Journal text','https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng'],
+ ['eu','Dual-use export controls, Regulation (EU) 2021/821','Article 12(2): the Member State where the exporter is established grants individual and global export authorisations. Article 17: the Commission amends the control lists by delegated act. I read the 15 Nov 2025 consolidated version. EUR-Lex lists a later one dated 21 Sep 2026 that I did not read.','primary','EUR-Lex, consolidated version 15 Nov 2025','https://eur-lex.europa.eu/eli/reg/2021/821/2025-11-15'],
+ ['eu','EU tech sovereignty package (proposals, news report)','A news report (EU Insider, dated 23 Jun 2026, not an official source) says the Commission proposed a Cloud and AI Development Act, a Chips Act 2.0 and an Open Source Strategy. Reported content: sovereignty tiers for cloud contracts, with US hyperscalers kept out of the most sensitive tier; emergency powers over semiconductor contracts in a shortage, fines of up to EUR 300,000 for withholding supply-chain information, and pooled chip procurement; a target to triple EU data centre capacity in five to seven years. All of this is reported as proposed, not adopted. The article says \u201cWednesday\u201d and is dated 23 Jun 2026, a Tuesday. A private site reports the Chips Act 2.0 proposal on Wednesday 3 Jun 2026, which may be the date meant. The article is also inconsistent on which tiers exclude US providers. I found no Commission page for these proposals, so check the official texts before relying on them.','secondary','EU Insider, tech sovereignty package','https://www.euinsider.eu/news/eu-tech-sovereignty-package-chips-cloud-act-2026'],
+ ['eu','Chips Act 2.0 proposal (status reported, official page not read)','Link to the Commission\u2019s Chips Act 2 page, supplied by the page author. It returned an error to my reader, so I read nothing from it. A private commercial site (Cyber Risk GmbH, no update date shown, not an official source) reports that the Commission adopted the proposal on 3 Jun 2026, that it would continue the Chips for Europe Initiative and repeal Regulation (EU) 2023/1781, and that it still needs Parliament and Council approval. The same site is inconsistent on the roadmap (Q2 2027 in a heading, Q4 2027 in a note). The Commission\u2019s European Chips Act page, which a checker read, says a Chips Act 2.0 was proposed in June 2026. The 2022 library page does not mention it.','secondary','Commission, Chips Act 2 page','https://digital-strategy.ec.europa.eu/en/policies/chips-act-2'],
+ ['eu','European Chips Act, Regulation (EU) 2023/1781','Adopted 13 Sep 2023, published 18 Sep 2023, in force 21 Sep 2023. My reader returned only the title and dates, so the provisions and targets are not checked.','primary','EUR-Lex, Official Journal text','https://eur-lex.europa.eu/eli/reg/2023/1781/oj/eng'],
+ ['eu','Digital Omnibus on AI, Regulation (EU) 2026/1744','Dated 8 Jul 2026 and signed at Strasbourg; published in the Official Journal on 24 Jul 2026. Article 4 says it enters into force on the third day after publication, which is 27 Jul 2026. Article 1 amends many articles of the AI Act, including Article 113. I read the title, the start of the recitals and Articles 1 to 4 in part, not every amendment. Parliament and the Council reached a provisional agreement on 7 May 2026. I found no Commission announcement of it.','primary','EUR-Lex, Regulation (EU) 2026/1744 (Official Journal)','https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng'],
+ ['eu','Commission guidelines for providers of general-purpose AI models','Not legally binding. They set out the Commission\u2019s reading of the scope of the AI Act duties for these providers. The page states: duties applied from 2 Aug 2025, Commission enforcement powers including fines from 2 Aug 2026, and models placed on the market before 2 Aug 2025 must comply by 2 Aug 2027. The page gave no publication date.','primary','European Commission, guidelines page (last update 28 Apr 2026)','https://digital-strategy.ec.europa.eu/en/policies/guidelines-gpai-providers'],
+ ['eu','Commission policy brief on competition in generative AI and virtual worlds','Commission staff published it on 19 Sep 2024, after a June 2024 workshop and a January 2024 call for contributions. The page I read did not describe the brief\u2019s content, and I did not open the brief itself.','primary','European Commission, competition policy','https://competition-policy.ec.europa.eu/about/reaching-out/virtual-worlds-and-generative-ai_en'],
+ ['eu','Commission page on the European Chips Act','Describes three pillars: the Chips for Europe Initiative, security of supply and resilience, and monitoring and crisis response through the European Semiconductor Board. States an aim to scale up production by 2030 but gives no quantified target on that page.','primary','European Commission, European Chips Act','https://digital-strategy.ec.europa.eu/en/policies/european-chips-act'],
+ ['eu','AI Continent Action Plan (Commission Q&A)','A policy plan, not a law. It covers AI factories around EuroHPC supercomputers, AI gigafactories under InvestAI (launched Feb 2025), and a planned Cloud and AI Development Act that aims to at least triple EU data-centre capacity within 5 to 7 years. The page gave no adoption date.','primary','European Commission, AI Continent Action Plan Q&A','https://digital-strategy.ec.europa.eu/en/faqs/ai-continent-action-plan-qa'],
+ ['us','Federal Trade Commission Act, section 5 (15 U.S.C. 45(a))','Declares unfair methods of competition and unfair or deceptive acts or practices unlawful, and empowers the Commission to prevent them, with listed exclusions. The page is the 2015 edition of the Code, so check the current text.','primary','govinfo, U.S. Code 2015 edition','https://www.govinfo.gov/content/pkg/USCODE-2015-title15/html/USCODE-2015-title15-chap2-subchapI-sec45.htm'],
+ ['us','Rule 144A, resales to large institutions (17 CFR 230.144A)','Current federal regulation text.','primary','eCFR','https://www.ecfr.gov/current/title-17/section-230.144A'],
+ ['us','Export Administration Regulations (15 CFR parts 730 to 774)','The official regulation text. Checked by the page author on 7 Nov 2026. The assistant did not read it. The Commerce Department news page is listed under authorities.','primary','eCFR, 15 CFR part 730','https://www.ecfr.gov/current/title-15/part-730'],
+ ['kr','Personal Information Protection Act','The English version is an unofficial translation with no legal effect. It shows Act No. 21445 (amended 10 Mar 2026), enforcement 11 Sep 2026. Article 7 sets up the PIPC under the Prime Minister. Article 4(6) gives data subjects a right to refuse a fully automated decision or ask for an explanation. The independent register above reports a later amendment, Act No. 21910 (promulgated 8 Sep 2026), adding a special case (Articles 28-12 to 28-15) that lets businesses reuse lawfully collected personal data for AI development with the PIPC\u2019s deliberation and resolution from 9 Mar 2027. The translation I read does not show it. A checker confirmed promulgation on 8 Sep 2026 and entry into force on 9 Mar 2027, but could not confirm the number 21910 anywhere, and found Articles 28-12 to 28-15 only as bill text. The mechanism is a PIPC deliberation and resolution rather than an approval, so check the official text.','primary','Ministry of Government Legislation, English translation','https://www.law.go.kr/LSW/eng/engLsInfoR.do?lsiSeq=283839'],
+ ['kr','PIPC press release on the 2026 PIPA amendments','Press release of 9 Mar 2026 from the Personal Information Protection Commission (read as the PDF you attached and on the PIPC page; the English version is an unofficial translation). It says the amended PIPA was announced on 10 Mar 2026 and takes effect on 11 Sep 2026, and the mandatory ISMS-P certification from 1 Jul 2027. Reported content: a special provision for sanctions of up to 10% of annual turnover for repeated or severe breaches, against 3% under the existing system, with lower sanctions for proven prevention investment except for intentional or grossly negligent breaches; notification or reporting of potential breaches, including forgery, alteration and damage such as ransomware; stronger CEO and Chief Privacy Officer responsibilities; the scope of ISMS-P entities is left to the Enforcement Decree. The release does not mention AI. The separate AI-training amendment (reported as Act No. 21910) is not in this release.','primary','PIPC, press release 9 Mar 2026 (English, unofficial translation)','https://pipc.go.kr/eng/user/ltn/new/noticeDetail.do?bbsId=BBSMSTR_000000000001&nttId=3005'],
+ ['kr','Framework Act on AI (AI Basic Act), English translation','The translation I read names MSIT (Art. 6), the Presidential Council (Arts. 7 and 8), the AI Policy Center (Art. 11) and the AI Safety Institute (Art. 12). Article 43(1) sets administrative fines of up to KRW 30 million for three failures: not giving the notice under Article 31(1), not designating a domestic representative under Article 36(1), and not complying with a cease-or-correct order under Article 40(3). The Act is No. 20676, amended by No. 21311 (20 Jan 2026), in force 22 Jan 2026. I found no grace period in the translation. The translation is not authoritative.','primary','Korea Legislation Research Institute, English translation',KRACT],
+ ['kr','Enforcement Decree of the Monopoly Regulation and Fair Trade Act','Article 9 lists types of abuse of a market-dominant position. This is the Decree, not the Act itself. The latest amendment visible was Aug 2024, so check for later versions.','primary','Korea Legislation Research Institute, English translation','https://elaw.klri.re.kr/kor_service/ebook.do?hseq=72864']
+];
+var RC=[
+ ['fr','INESIA, national institute for AI evaluation and safety','Created in 2025 and steered jointly by two government bodies (DGE and SGDSN). Member bodies named on the government page: ANSSI, Inria, LNE and PEReN. Its 2026-2027 roadmap (12 Feb 2026) has three thematic poles (support to regulation, systemic risks of advanced AI, performance and reliability) plus a cross-cutting axis.','primary','Government press page, INESIA roadmap 2026-2027','https://www.entreprises.gouv.fr/espace-presse/linstitut-national-pour-levaluation-et-la-securite-de-lia-adopte-sa-feuille-de-route'],
+ ['fr','CEA-Leti, Grenoble','A research centre of the CEA working on micro and nanotechnologies since 1967. It describes a lab-to-fab model: pilot lines, cleanrooms and prototyping, and transfer to companies. It lists offices in the US, Belgium, Japan, Taiwan and South Korea.','primary','CEA-Leti, Who are we','https://www.cea.fr/cea-tech/leti/english/Pages/Leti/About-Leti/mission-organization.aspx'],
+ ['fr','GENCI and the Jean Zay supercomputer','GENCI owns Jean Zay, which IDRIS operates. The page calls it France\u2019s first converged AI and high-performance computing system. The page is dated 1 Jul 2022, so its capacity and usage statements are old.','primary','GENCI news page (1 Jul 2022)','https://genci.fr/en/news/artificial-intelligence-renaud-vedel-national-strategy-coordinator-visits-jeanzay'],
+ ['fr','Inria, artificial intelligence page','Inria\u2019s AI page, supplied by the page author and checked by her on 7 Nov 2026. The assistant could not read it. The INESIA government page names Inria as a member.','institution','Inria, AI page','https://www.inria.fr/en/artificial-intelligence'],
+ ['eu','Joint Research Centre (JRC), AI Watch','The Commission\u2019s AI site run by the JRC with DG CONNECT. It began as a knowledge service in 2018 to 2022 that tracked AI development and uptake in Europe, and states a purpose of research and policy support on trustworthy AI.','primary','European Commission, AI Watch, About','https://ai-watch.ec.europa.eu/about_en'],
+ ['eu','EuroHPC Joint Undertaking, AI Gigafactories call','On 30 Jul 2026 it opened a call for tenders to build and operate up to seven AI Gigafactories. Submissions close 12 Nov 2026. It states an expectation of over EUR 20 billion in private investment, which is an expectation, not an outcome.','primary','EuroHPC JU, call announcement (30 Jul 2026)','https://eurohpc-ju.europa.eu/eurohpc-joint-undertaking-launches-ai-gigafactories-call-2026-07-30_en'],
+ ['eu','imec (Belgium)','A leading semiconductor research centre. Official site checked by the page author on 7 Nov 2026. The assistant did not read it.','institution','imec site','https://www.imec-int.com'],
+ ['kr','Korea AI Safety Institute (AISI)','States its goal as a research base for understanding AI safety, with three roles: leading AI safety policy, serving as a hub for experiments and analysis, and researching emerging risks. The page does not name a parent body or a founding date. It only points to ETRI for recruitment.','primary','AISI Korea, English site','https://www.aisi.re.kr/eng/contents/34'],
+ ['kr','ETRI, Electronics and Telecommunications Research Institute','Founded in 1976 in Daejeon. States a mission of contributing to economic and social development through industrial core technologies. Its organisation chart lists AI, physical AI, AI safety and aerospace semiconductor units.','primary','ETRI, Overview','https://www.etri.re.kr/engcon/sub1/sub1_02.etri'],
+ ['kr','KISDI, Korea Information Society Development Institute','A government-affiliated policy institute under the National Research Council for Economics, Humanities and Social Sciences. It researches communications and broadcasting policy and regulation. The page seems not recently updated: it names a president appointed in Aug 2023.','primary','KISDI, English site','https://www.kisdi.re.kr/eng/content.do?key=m2102103225645'],
+ ['kr','IEA report on energy and AI in East Asia, commissioned by the Korea Energy Economics Institute','The report page says it was commissioned by the Korea Energy Economics Institute and covers rising data-centre electricity demand and grid planning in East Asia. I read only its background section, not the Korea findings.','institution','IEA, Energy and AI in East Asia','https://www.iea.org/reports/energy-and-ai-in-east-asia'],
+ ['kr','KAIST Graduate School of AI (GSAI)','A university AI graduate school. Site checked by the page author on 7 Nov 2026. The assistant could not read it.','institution','KAIST GSAI site','https://gsai.kaist.ac.kr/'],
+ ['kr','KAIST GSAI, publications by year','Its publication listing, supplied and checked by the page author on 7 Nov 2026. The assistant could not read it.','institution','KAIST GSAI publications','https://gsai.kaist.ac.kr/publication-research-year/'],
+ ['kr','Seoul National University AI Institute (AIIS)','The university\u2019s AI institute. Site checked by the page author on 7 Nov 2026. The assistant could not read it.','institution','SNU AI Institute','https://aiis.snu.ac.kr/eng/eng3_2.php']
+];
+var LDOM={raw_foundry:['trade'],design_foundry:['trade'],foundry_mem:['trade'],mem_chips:['trade','comp'],chips_dc:['energy'],dc_labs:['comp','fin'],labs_cloud:['ai','data','comp'],cloud_users:['data','comp'],users_labs:['ai','data'],fund_labs:['fin','comp'],fund_cloud:['fin'],fund_dc:['fin'],cloud_chips:['trade','comp'],fund_chips:['fin','comp'],users_fund:['fin'],dc_wo:['fin'],gen_grid:['energy'],grid_dc:['energy'],grid_stall:['energy'],dc_gen:['energy'],uni_labs:[],rd_labs:['ai'],rd_dc:[],labs_users:['comp'],chips_wo:['fin'],rates_fund:['fin'],rules_foundry:['trade','comp'],rules_labs:['ai','data'],rules_fund:['fin'],rules_grid:['energy']};
+state.jur='all';
+function authRows(dom){return A.filter(function(a){return a[0]===dom&&(state.jur==='all'||a[1]===state.jur);});}
+function authHtml(){
+  var h='';
+  DOM.forEach(function(D){
+    var rows=authRows(D[0]);
+    h+='<h3 id="dom-'+D[0]+'">'+esc(D[1])+'</h3>';
+    h+=rows.length?'<ul class="auth">'+rows.map(function(a){
+      return '<li><span class="jtag">'+JNAME[a[1]]+'</span><span><b>'+esc(a[2])+'</b><span class="arole">'+esc(a[3])+'</span><small><span class="tag tag-'+a[4]+'">'+TAGS[a[4]]+'</span> '+(a[6]?'<a href="'+a[6]+'" target="_blank" rel="noopener">'+esc(a[5])+'</a>':esc(a[5]))+'</small></span></li>';
+    }).join('')+'</ul>':'<p class="note">Nothing listed for this selection.</p>';
+  });
+  var law=PL.filter(function(a){return state.jur==='all'||a[0]===state.jur;});
+  h+='<h3 id="dom-law">Primary legal texts</h3>'+(law.length?'<ul class="auth">'+law.map(function(a){
+    return '<li><span class="jtag">'+JNAME[a[0]]+'</span><span><b>'+esc(a[1])+'</b><span class="arole">'+esc(a[2])+'</span><small><span class="tag tag-'+a[3]+'">'+TAGS[a[3]]+'</span> '+(a[5]?'<a href="'+a[5]+'" target="_blank" rel="noopener">'+esc(a[4])+'</a>':esc(a[4]))+'</small></span></li>';
+  }).join('')+'</ul>':'<p class="note">Nothing listed for this selection.</p>');
+  var rc=RC.filter(function(a){return state.jur==='all'||a[0]===state.jur;});
+  h+='<h3 id="dom-research">Research centres and labs</h3>'+(rc.length?'<ul class="auth">'+rc.map(function(a){
+    return '<li><span class="jtag">'+JNAME[a[0]]+'</span><span><b>'+esc(a[1])+'</b><span class="arole">'+esc(a[2])+'</span><small><span class="tag tag-'+a[3]+'">'+TAGS[a[3]]+'</span> '+(a[5]?'<a href="'+a[5]+'" target="_blank" rel="noopener">'+esc(a[4])+'</a>':esc(a[4]))+'</small></span></li>';
+  }).join('')+'</ul>':'<p class="note">Nothing listed for this selection.</p>');
+  return h;
+}
+function renderAuth(){
+  var el=document.getElementById('authbody');if(!el){return;}
+  el.innerHTML=authHtml();
+  Array.prototype.forEach.call(document.getElementById('jur').children,function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-v')===state.jur));});
+  document.getElementById('authsum').textContent='Who oversees what: USA, EU, France and Korea ('+A.length+' authorities, '+PL.length+' legal texts, '+RC.length+' research centres)';
+}
+(function(){var j=document.getElementById('jur');JUR.forEach(function(J2){var b=document.createElement('button');b.type='button';b.className='chip';b.textContent=J2[1];b.setAttribute('data-act','jur');b.setAttribute('data-v',J2[0]);j.appendChild(b);});})();
+renderAuth();
+var LSTAT={
+ rules_foundry:[['USA','Export controls on advanced computing chips and chip-making items (Commerce department)','In force in some form. BIS\u2019s news page lists licensing-policy changes in 2026. The current rule text was not checked.','primary'],['EU','Dual-use export authorisations by Member State authorities, with the control list updated by Commission delegated regulation','In force (Commission trade-policy page)','primary']],
+ rules_labs:[['EU','AI Act (Regulation 2024/1689)','In force. Article 113 as amended by Regulation (EU) 2026/1744 (Official Journal, 24 Jul 2026; in force 27 Jul 2026) applies high-risk duties from 2 Dec 2027 for Annex III systems and 2 Aug 2028 for Annex I products. I read Article 113 in EUR-Lex\u2019s consolidated version. I did not find a separate date for public authorities.','primary'],['EU','EDPB Opinion 28/2024 on AI models','Opinion adopted 17 Dec 2024 (EDPB document). Binding force not checked.','primary'],['Korea','AI Basic Act','In force since 22 Jan 2026. MSIT says it will give at least one year before enforcement and defer fact-finding investigations and penalties, except in highly exceptional cases (MSIT page).','primary'],['USA','Federal AI-specific statute','None found in the sources I saw. State laws not checked.','framework']],
+ rules_fund:[['USA','Rule 144A, private resales to large institutions (17 CFR 230.144A)','In force (eCFR)','primary']],
+ rules_grid:[['Great Britain','Regulator proposal: commitment fee and queue milestones for large data-centre projects','Proposal. Consultation closed 16 Sep 2026. No final decision found.','primary'],['USA','FERC docket RM26-4-000, large-load interconnection','Advance notice of proposed rulemaking after an Energy Secretary directive on 23 Oct 2025. On 18 Jun 2026 FERC issued show-cause orders to six grid operators (CAISO, ISO-NE, MISO, NYISO, PJM, SPP) and kept the docket open. I read only secondary summaries of those orders.','primary']]
+};
+function legalStatus(l){var r=LSTAT[l.id];if(!r){return '';}
+  return '<ul class="legal">'+r.map(function(x){return '<li><b>'+esc(x[0])+':</b> '+esc(x[1])+'. <b>Stage:</b> '+esc(x[2])+' <span class="tag tag-'+x[3]+'">'+TAGS[x[3]]+'</span></li>';}).join('')+'</ul><p class="note">Stage vocabulary: in force, adopted, proposal, consultation, outcome not confirmed. Not legal advice.</p>';}
+/* ---------- your checks: saved in this browser only ---------- */
+var MARKS={};try{MARKS=JSON.parse(localStorage.getItem('ailoop-marks')||'{}')||{};}catch(e){MARKS={};}
+var MLAB={hold:'Holding',refuted:'Refuted',unclear:'Unclear'};
+function saveMarks(){try{localStorage.setItem('ailoop-marks',JSON.stringify(MARKS));}catch(e){}}
+function markHtml(l){var m=MARKS[l.id];
+  return '<p class="note" style="margin:8px 0 2px"><b>Your check:</b> '+Object.keys(MLAB).map(function(k){return '<button class="chip mk" type="button" data-act="mark" data-id="'+l.id+'" data-v="'+k+'" aria-pressed="'+(m&&m.v===k)+'">'+MLAB[k]+'</button>';}).join(' ')+'</p>'+(m?'<p class="note" style="margin:0">Marked '+esc(MLAB[m.v])+' on '+esc(m.d)+'. Saved in this browser only.</p>':'<p class="note" style="margin:0">Record what you find when you check it. Saved in this browser only.</p>');}
+function scoreText(){return links.map(function(l){var m=MARKS[l.id];return (m?m.d:'-')+' | '+N[l.from].label+' > '+N[l.to].label+' | '+TREND[l.hyp.trend].name+' | '+(m?MLAB[m.v]:'Not checked');}).join('\n');}
+function renderScore(){
+  var el=document.getElementById('scorebody');if(!el){return;}
+  var n=links.filter(function(l){return MARKS[l.id];}).length;
+  var c={hold:0,refuted:0,unclear:0};links.forEach(function(l){var m=MARKS[l.id];if(m){c[m.v]++;}});
+  document.getElementById('scoresum').textContent='Your scorecard: '+n+' of '+links.length+' hypotheses checked';
+  el.innerHTML='<p class="note">Holding '+c.hold+', refuted '+c.refuted+', unclear '+c.unclear+', not checked '+(links.length-n)+'. This is your own record of what you found at each source, dated, saved in this browser only. It is not a measure of the model\u2019s accuracy until you have checked many flows.</p><textarea id="scoretxt" class="scoretxt" readonly rows="8" aria-label="Scorecard as text">'+esc(scoreText())+'</textarea><div class="crow"><button class="btn" type="button" data-act="score-copy">Copy as text</button><button class="btn" type="button" data-act="score-clear">Clear all checks</button></div>';
+}
+renderScore();
+function oversees(l){
+  var ds=LDOM[l.id]||[];if(!ds.length){return '';}
+  var out='<ul class="legal">'+ds.map(function(d){
+    var nm=DOM.filter(function(D){return D[0]===d;})[0][1];
+    var by={};authRows(d).forEach(function(a){(by[a[1]]=by[a[1]]||[]).push(a[2]);});
+    var txt=Object.keys(by).map(function(j){return '<b>'+JNAME[j]+':</b> '+esc(by[j].join('; '));}).join(' ');
+    return '<li><b>'+esc(nm)+'.</b> '+txt+' <button class="linkbtn" type="button" data-act="auth" data-v="'+d+'">Details</button></li>';
+  }).join('')+'</ul><p class="note">Names only, for the jurisdiction selected under Who oversees what. Roles and sources are listed there. Not legal advice.</p>';
+  return out;
+}
+var GLOSS=[
+ {k:'hbm',t:'HBM',re:/\bHBM\b/,d:'High-bandwidth memory: stacks of memory chips placed next to an AI processor so it can read data very fast.'},
+ {k:'capex',t:'Capex',re:/\bcapex\b/i,d:'Capital expenditure: money spent on long-lived assets such as buildings and chips, as opposed to running costs.'},
+ {k:'hyperscaler',t:'Hyperscaler',re:/\bhyperscalers?\b/i,d:'A very large cloud company that runs data centres at massive scale and rents out computing.'},
+  {k:'foundry',t:'Foundry',re:/\bfoundr(?:y|ies)\b/i,d:'A factory that makes chips designed by other companies.'},
+ {k:'accelerator',t:'Accelerator',re:/\baccelerators?\b/i,d:'A chip built for AI workloads, usually a GPU or a custom design.'},
+ {k:'compute',t:'Compute',re:/\bcompute\b/i,d:'Computing power: the processing a model needs to be trained or to answer questions.'},
+ {k:'spv',t:'Special-purpose vehicle (SPV)',re:/\bspecial-purpose vehicles?\b|\bSPVs?\b/i,d:'A separate legal entity set up to own one project, such as a data centre, and to borrow against it.'},
+ {k:'obs',t:'Off-balance-sheet',re:/\boff-balance-sheet\b/i,d:'Obligations kept outside a company’s main accounts, such as some leases and vehicles. They can be disclosed in notes without showing up as debt.'},
+ {k:'vendor',t:'Vendor financing',re:/\bvendor financing\b/i,d:'A supplier helps fund its own customer, for example through loans, equity, guarantees or capacity purchases, so the customer can buy the supplier’s products.'},
+ {k:'round',t:'Round-tripping',re:/\bround-tripping\b/i,d:'Money that leaves a company and comes back to it as revenue, which can make demand look bigger than it is.'},
+ {k:'circular',t:'Circular financing',re:/\bcircular financing\b/i,d:'Funding that loops between companies in the same chain, such as a supplier investing in a customer who then buys from it.'},
+ {k:'r144a',t:'Rule 144A',re:/\b(?:Rule )?144A\b/,d:'A US rule that lets companies sell unregistered securities to large institutions called qualified institutional buyers.'},
+ {k:'qib',t:'Qualified institutional buyer',re:/\bqualified institutional buyers?\b/i,d:'In the US, a large institution that meets the SEC size test for owning and investing in securities (17 CFR 230.144A).'},
+ {k:'units',t:'GW and TWh',re:/\b(?:GW|TWh)\b/,d:'A gigawatt (GW) measures power at one moment. A terawatt-hour (TWh) measures energy over time. Queues are counted in GW, annual use in TWh.'},
+ {k:'queue',t:'Connection queue',re:/\b(?:grid )?connection queues?\b|\bgrid queues?\b/i,d:'The waiting list of projects that have asked a grid operator for permission to connect to the grid.'},
+ {k:'leverage',t:'Leverage (here)',re:/\bLeverage\b/,d:'How much bargaining power a stage has over the others, for example because few firms supply it. This is my classification, not a measured figure.'},
+ {k:'provider',t:'Provider (EU AI Act)',re:/\bproviders?\b/i,d:'Develops an AI system or model, or has one developed, and places it on the market under its own name (Article 3).'},
+ {k:'deployer',t:'Deployer (EU AI Act)',re:/\bdeployers?\b/i,d:'Uses an AI system under its authority, except in the course of a personal non-professional activity (Article 3).'},
+ {k:'residual',t:'Residual-value support',re:/\bresidual[- ]value (?:support|guarantees?)\b/i,d:'A promise to cover part of the shortfall if hardware is worth less than expected when a lease ends.'}];
+GLOSS.push(GLOSSX);var GL={};GLOSS.forEach(function(g){GL[g.k]=g;});
+(function(){var gl=document.getElementById('gloss');gl.innerHTML=GLOSS.slice().sort(function(a,b){return a.t.localeCompare(b.t,'en',{sensitivity:'base'});}).map(function(g){return '<dt>'+esc(g.t)+'</dt><dd>'+esc(g.d)+'</dd>';}).join('');document.getElementById('glosssum').textContent='Glossary ('+GLOSS.length+' terms)';})();
+function eligible(node,root){
+  var p=node.parentNode;
+  while(p&&p!==root){
+    var tn=p.tagName;
+    if(tn==='BUTTON'||tn==='TEXTAREA'||tn==='H2'||tn==='H3'||tn==='SMALL'){return false;}
+    if(p.classList&&(p.classList.contains('tag')||p.classList.contains('term'))){return false;}
+    p=p.parentNode;
+  }
+  return true;
+}
+function applyGloss(root){
+  GLOSS.forEach(function(g){
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,hit=null;
+    while((n=w.nextNode())){if(eligible(n,root)){var m=g.re.exec(n.nodeValue);if(m){hit={n:n,m:m};break;}}}
+    if(!hit){return;}
+    var t=hit.n,txt=t.nodeValue,i=hit.m.index,len=hit.m[0].length,par=t.parentNode;
+    var b=document.createElement('button');b.type='button';b.className='term';b.setAttribute('data-act','term');b.setAttribute('data-v',g.k);b.setAttribute('aria-haspopup','dialog');b.textContent=hit.m[0];
+    par.insertBefore(document.createTextNode(txt.slice(0,i)),t);par.insertBefore(b,t);par.insertBefore(document.createTextNode(txt.slice(i+len)),t);par.removeChild(t);
+  });
+}
+function showPop(el,key){
+  var g=GL[key],pop=document.getElementById('pop');if(!g){return;}
+  if(!pop.hidden&&pop.getAttribute('data-k')===key){pop.hidden=true;return;}
+  document.getElementById('popt').textContent=g.t;document.getElementById('popd').textContent=g.d;
+  pop.setAttribute('data-k',key);pop.hidden=false;pop.style.width=Math.min(320,window.innerWidth-24)+'px';
+  var r=el.getBoundingClientRect(),h=pop.offsetHeight;
+  var left=Math.max(12,Math.min(window.innerWidth-pop.offsetWidth-12,r.left)),top=r.bottom+8;
+  if(top+h>window.innerHeight-12){top=Math.max(12,r.top-h-8);}
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+function syncLevel(){
+  var ex=state.level==='expert';
+  document.body.classList.toggle('lvl-expert',ex);
+  Array.prototype.forEach.call(document.querySelectorAll('#level button'),function(b){b.setAttribute('aria-pressed',String((b.getAttribute('data-v')==='expert')===ex));});
+  document.getElementById('lvlnote').textContent=ex?'Every source, indicators, rules angle and technical notes.':'Plain language, one key source per item.';
+  document.getElementById('pop').hidden=true;
+}
+
+/* ---------- layouts: wide map and portrait map for vertical video ---------- */
+var curW=W;
+var TALL={uni:[90,45],inst:[270,45],rd:[450,45],fund:[90,140],labs:[270,140],cloud:[450,140],users:[450,235],chips:[90,330],dc:[270,330],wo:[450,330],mem:[90,425],grid:[270,425],gen:[450,425],foundry:[90,520],design:[270,520],stall:[450,520],raw:[90,615]};
+var TCURVE={users_labs:25,users_fund:30,dc_gen:30,rd_labs:25,fund_cloud:-90,rules_foundry:60,rules_grid:-85,rd_dc:150,labs_users:-45,chips_wo:85,rates_fund:-50};
+nodes.forEach(function(n){n.wx=n.x;n.wy=n.y;});
+links.forEach(function(l){l.wcurve=l.curve||0;});
+function placeNode(n){
+  n.rect.setAttribute('x',n.x-NW/2);n.rect.setAttribute('y',n.y-NH/2);
+  n.tt.setAttribute('x',n.x);n.tt.setAttribute('y',n.y-5);
+  n.ss.setAttribute('x',n.x);n.ss.setAttribute('y',n.y+14);
+  n.bc.setAttribute('cx',n.x+NW/2-6);n.bc.setAttribute('cy',n.y-NH/2+2);
+  n.bt.setAttribute('x',n.x+NW/2-6);n.bt.setAttribute('y',n.y-NH/2+2);
+}
+function placeLink(l){
+  var gm=geom(l);
+  l.path.setAttribute('d',gm.d);l.hit.setAttribute('d',gm.d);l.len=l.path.getTotalLength();
+  var tpt=l.path.getPointAtLength(l.len/2);l.tb.setAttribute('transform','translate('+tpt.x+' '+tpt.y+')');
+  if(l.bar){
+    var tl=Math.hypot(gm.tg[0],gm.tg[1])||1,ux=gm.tg[0]/tl,uy=gm.tg[1]/tl;
+    l.bar.setAttribute('x1',gm.ex-uy*12);l.bar.setAttribute('y1',gm.ey+ux*12);
+    l.bar.setAttribute('x2',gm.ex+uy*12);l.bar.setAttribute('y2',gm.ey-ux*12);
+  }
+}
+function applyLayout(mode){
+  var tall=mode==='tall',h=tall?670:640;
+  nodes.forEach(function(n){n.x=tall?TALL[n.id][0]:n.wx;n.y=tall?TALL[n.id][1]:n.wy;placeNode(n);});
+  links.forEach(function(l){l.curve=tall?(TCURVE[l.id]||0):l.wcurve;placeLink(l);});
+  curW=tall?540:W;
+  svg.setAttribute('viewBox','0 0 '+curW+' '+h);
+  bgRect.setAttribute('width',curW);bgRect.setAttribute('height',h);
+  svg.classList.toggle('tallmap',tall);
+  gTip.setAttribute('visibility','hidden');
+  tick();
+}
+
+/* ---------- controls ---------- */
+var layersEl=document.getElementById('layers');
+LAYERS.forEach(function(L){
+  var b=document.createElement('button');b.type='button';b.className='chip';b.textContent=L[1];b.setAttribute('data-act','layer');b.setAttribute('data-v',L[0]);
+  var nL=L[0]==='all'?links.length:links.filter(function(l){return l.layers.indexOf(L[0])>=0;}).length;b.textContent=L[1]+' ('+nL+')';layersEl.appendChild(b);
+});
+var trendEl=document.getElementById('trends'),trendNone=false;
+[['all','All']].concat(['up','flat','mixed','down'].map(function(k){return [k,TREND[k].glyph+' '+TREND[k].name];})).forEach(function(T){
+  var n=T[0]==='all'?links.length:links.filter(function(l){return l.hyp.trend===T[0];}).length;
+  if(n===0&&T[0]!=='all'){trendNone=true;return;}
+  var b=document.createElement('button');b.type='button';b.className='chip';b.textContent=T[1]+' ('+n+')';b.setAttribute('data-act','trend');b.setAttribute('data-v',T[0]);
+  trendEl.appendChild(b);
+});
+if(trendNone){var tn=document.createElement('span');tn.className='note';tn.textContent='No flow is currently hypothesised to fall.';trendEl.parentNode.appendChild(tn);}
+var findEl=document.getElementById('find'),FIND={};
+(function(){var dl=document.getElementById('finds'),h='';
+  nodes.forEach(function(n){FIND[n.label.toLowerCase()]=['node',n.id];h+='<option value="'+n.label.replace(/"/g,'&quot;')+'"></option>';});
+  links.forEach(function(l){var t=N[l.from].label+(l.type==='bi'?' \u21C4 ':' \u2192 ')+N[l.to].label;FIND[t.toLowerCase()]=['link',l.id];h+='<option value="'+t.replace(/"/g,'&quot;')+'"></option>';});
+  dl.innerHTML=h;})();
+var ctxEl=document.getElementById('ctx');
+ctxEl.addEventListener('change',function(){state.ctx=ctxEl.checked;render();});
+findEl.addEventListener('change',function(){
+  var t=FIND[findEl.value.trim().toLowerCase()];
+  if(!t){var q=findEl.value.trim().toLowerCase();if(q){var k=Object.keys(FIND).filter(function(x){return x.indexOf(q)===0;});if(k.length===1){t=FIND[k[0]];}}}
+  if(!t){flash(findEl.value?'No match. Pick a name from the list.':'');return;}
+  findEl.value='';select(t[0],t[1]);
+});
+(function(){var c=document.getElementById('ctl');if(window.innerWidth>700){c.open=true;}})();
+var scnEl=document.getElementById('scn');
+SCN.forEach(function(s){
+  var b=document.createElement('button');b.type='button';b.className='chip scn';b.textContent=s.label;b.setAttribute('data-act','scn');b.setAttribute('data-v',s.id);b.setAttribute('aria-pressed','false');scnEl.appendChild(b);
+});
+var legendEl=document.getElementById('legend');
+function sample(t){
+  var a=reduced?null:function(path,dur){return '<circle r="3" fill="currentColor"><animateMotion dur="'+dur+'" repeatCount="indefinite" path="'+path+'"/></circle>';};
+  var line,dots='';
+  if(t==='uni'){line='<line x1="2" y1="8" x2="38" y2="8" stroke="currentColor" stroke-width="2.4" marker-end="url(#arrL)"/>';if(a){dots=a('M2 8 H38','1.5s');}}
+  if(t==='bi'){line='<line x1="8" y1="8" x2="38" y2="8" stroke="currentColor" stroke-width="2.4" marker-start="url(#arrL)" marker-end="url(#arrL)"/>';if(a){dots=a('M8 8 H38','1.5s')+a('M38 8 H8','1.5s');}}
+  if(t==='term'){line='<line x1="2" y1="8" x2="38" y2="8" stroke="currentColor" stroke-width="2.4"/><line x1="40" y1="1" x2="40" y2="15" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>';if(a){dots=a('M2 8 H36','1.5s');}}
+  if(t==='circ'){line='<path d="M2 12 Q22 -6 40 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="6 4" marker-end="url(#arrL)"/>';if(a){dots=a('M2 12 Q22 -6 40 12','1.8s');}}
+  return '<svg viewBox="0 0 46 16" aria-hidden="true">'+line+dots+'</svg>';
+}
+['uni','bi','term','circ'].forEach(function(t){
+  var b=document.createElement('button');b.type='button';b.className='lg lg-'+t;b.setAttribute('data-act','only');b.setAttribute('data-v',t);b.setAttribute('aria-pressed','false');
+  b.innerHTML=sample(t)+'<span><b>'+TYPES[t].name+'</b><small>'+TYPES[t].lg+'</small></span>';
+  legendEl.appendChild(b);
+});
+
+/* ---------- mobile stack ---------- */
+var STACK_ORDER=['fund','cloud','chips','mem','foundry','design','raw','dc','grid','gen','stall','labs','users','wo','uni','rd','inst'];
+var stackEl=document.getElementById('stack');
+function glyphRow(l,other){
+  var fl='<span class="fl fl-'+l.type+'" aria-hidden="true">'+(l.type==='bi'?'<s></s><i></i><i class="b"></i>':'<i></i>')+'</span>';
+  return '<button class="row" type="button" data-act="link" data-id="'+l.id+'" data-link="'+l.id+'">'+fl+'<span><b>'+esc(other.label)+'</b><small>'+esc(l.label)+' ('+TYPES[l.type].name.toLowerCase()+') \u00B7 '+TREND[l.hyp.trend].glyph+' '+TREND[l.hyp.trend].name+'</small></span></button>';
+}
+stackEl.innerHTML=STACK_ORDER.map(function(id){
+  var n=N[id],rows='';
+  links.forEach(function(l){
+    if(l.from===id){rows+=glyphRow(l,N[l.to]);}
+    else if(l.to===id&&l.type==='bi'){rows+=glyphRow(l,N[l.from]);}
+  });
+  return '<section class="card" data-node="'+id+'"><span class="cb" aria-hidden="true"></span><button class="head" type="button" data-act="node" data-id="'+id+'"><b>'+esc(n.label)+'</b><small>'+esc(n.sub)+'</small></button>'+(rows||'<p class="note" style="margin:0">Sends nothing on. The flow ends here.</p>')+'</section>';
+}).join('');
+
+/* ---------- state and view ---------- */
+function visible(l){
+  var inLayer=state.layer==='all'||l.layers.indexOf(state.layer)>=0;
+  return inLayer&&state.types[l.type]&&(!state.trend||l.hyp.trend===state.trend);
+}
+function focusPanel(){
+  /* scroll only when the panel is out of view, so tapping on a tablet does not throw you away from the map */
+  if(window.matchMedia&&window.matchMedia('(max-width:1020px)').matches){
+    var top=panel.getBoundingClientRect().top;
+    if(top>window.innerHeight*0.75||top<0){panel.scrollIntoView({behavior:reduced?'auto':'smooth',block:'start'});}
+  }
+}
+function select(kind,id){
+  state.tour=null;state.scn=null;state.build=null;
+  if(kind==='node'&&!links.some(function(l){return visible(l)&&(l.from===id||l.to===id);})){state.layer='all';state.trend=null;}
+  if(kind==='link'&&!visible(LK[id])){state.layer='all';state.trend=null;}
+  state.sel=kind?{kind:kind,id:id}:null;
+  render();if(kind){focusPanel();}
+}
+function render(){
+  var aL={},aN={},lvlN={},lvlL={},vis=links.filter(visible),focusMode=false,scn=state.scn?SC[state.scn]:null;
+  if(state.build!==null){
+    focusMode=true;
+    links.forEach(function(l){if(l.fs<=state.build){aL[l.id]=1;aN[l.from]=1;aN[l.to]=1;}});
+  }else if(scn){
+    focusMode=true;
+    var rv=document.body.classList.contains('rec')?state.reveal:null;
+    scn.steps.forEach(function(s,i){
+      if(rv!==null&&i>=rv){return;}
+      s.n.forEach(function(id){aN[id]=1;if(!lvlN[id]){lvlN[id]=i+1;}});
+      s.l.forEach(function(id){aL[id]=1;if(!lvlL[id]){lvlL[id]=i+1;}});
+    });
+  }else if(state.tour!==null){
+    var st=TOUR[state.tour];st.links.forEach(function(i){aL[i]=1;});st.nodes.forEach(function(i){aN[i]=1;});focusMode=true;
+  }else if(state.sel&&state.sel.kind==='node'){
+    var id=state.sel.id;aN[id]=1;focusMode=true;
+    vis.forEach(function(l){if(l.from===id||l.to===id){aL[l.id]=1;aN[l.from]=1;aN[l.to]=1;}});
+  }else if(state.sel&&state.sel.kind==='link'){
+    var k=LK[state.sel.id];aL[k.id]=1;aN[k.from]=1;aN[k.to]=1;focusMode=true;
+  }else{
+    vis.forEach(function(l){aL[l.id]=1;aN[l.from]=1;aN[l.to]=1;});
+  }
+  var iso=state.layer!=='all'&&!state.ctx&&state.tour===null&&state.build===null&&!scn,layN={},layL={};
+  vis.forEach(function(l){layL[l.id]=1;layN[l.from]=1;layN[l.to]=1;});
+  links.forEach(function(l){
+    var on=!!aL[l.id];l.on=on;
+    l.g.classList.toggle('gone',iso&&!layL[l.id]);
+    l.g.classList.toggle('dim',!on);
+    l.g.classList.toggle('focus',on&&(focusMode||state.layer==='know'));
+    l.g.classList.toggle('sel',!!(state.sel&&state.sel.kind==='link'&&state.sel.id===l.id&&!scn&&state.tour===null));
+    l.g.classList.toggle('hit',!!(scn&&lvlL[l.id]));
+    l.g.classList.toggle('new',state.build!==null&&l.fs===state.build);
+  });
+  nodes.forEach(function(n){
+    var lv=scn?lvlN[n.id]:0;
+    n.g.classList.toggle('dim',!aN[n.id]);
+    n.g.classList.toggle('gone',iso&&!layN[n.id]);
+    n.g.classList.toggle('sel',!!(state.sel&&state.sel.kind==='node'&&state.sel.id===n.id&&!scn&&state.tour===null));
+    n.g.classList.toggle('hit',!!lv);
+    n.g.classList.toggle('new',state.build!==null&&n.fs===state.build);
+    if(lv){n.g.style.setProperty('--d',(lv*0.7)+'s');n.bt.textContent=String(lv);}
+  });
+  Array.prototype.forEach.call(stackEl.querySelectorAll('.card'),function(c){
+    var id=c.getAttribute('data-node');
+    c.classList.toggle('dim',!aN[id]);c.classList.toggle('gone',iso&&!layN[id]);c.classList.toggle('hit',!!(scn&&lvlN[id]));
+    var cb=c.querySelector('.cb');if(cb){cb.textContent=(scn&&lvlN[id])?String(lvlN[id]):'';}
+    c.classList.toggle('new',state.build!==null&&N[id].fs===state.build);
+    c.classList.toggle('sel',!!(state.sel&&state.sel.kind==='node'&&state.sel.id===id&&!scn&&state.tour===null));
+  });
+  Array.prototype.forEach.call(stackEl.querySelectorAll('.row'),function(r){r.classList.toggle('dim',!aL[r.getAttribute('data-link')]);r.classList.toggle('gone',iso&&!layL[r.getAttribute('data-link')]);});
+  var locked=state.tour!==null||state.build!==null;
+  var parts=[];
+  if(state.layer!=='all'){parts.push(LAYERS.filter(function(L){return L[0]===state.layer;})[0][1]+(state.ctx?' (others faint)':' only'));}
+  if(state.trend){parts.push(TREND[state.trend].name);}
+  if(state.only){parts.push(TYPES[state.only].name+' type');}
+  var act=document.getElementById('active'),rst=document.getElementById('reset');
+  act.textContent=parts.length?'Showing '+vis.length+' of '+links.length+' flows: '+parts.join(', ')+'.':'Showing all '+links.length+' flows together.';
+  rst.hidden=!parts.length&&!state.scn;
+  ctxEl.checked=state.ctx;ctxEl.disabled=state.layer==='all'||locked;
+  Array.prototype.forEach.call(trendEl.children,function(b){var v=b.getAttribute('data-v');b.setAttribute('aria-pressed',String(v==='all'?!state.trend:state.trend===v));if(b.title){b.setAttribute('aria-disabled','true');}else{b.setAttribute('aria-disabled',String(locked));}});
+  Array.prototype.forEach.call(layersEl.children,function(b){b.setAttribute('aria-pressed',String(b.getAttribute('data-v')===state.layer));b.setAttribute('aria-disabled',String(locked));});
+  Array.prototype.forEach.call(legendEl.children,function(b){b.setAttribute('aria-pressed',String(state.only===b.getAttribute('data-v')));b.setAttribute('aria-disabled',String(locked));});
+  Array.prototype.forEach.call(scnEl.children,function(b){b.setAttribute('aria-pressed',String(state.scn===b.getAttribute('data-v')));});
+  if(state.sel&&state.sel.kind==='link'&&!scn&&state.tour===null){showTip(LK[state.sel.id]);}else{gTip.setAttribute('visibility','hidden');}
+  var msg=hintMsg;
+  if(!msg){msg=state.build!==null?'Build-up: each step adds one layer, and new items glow. Use Next and Back in the panel.':state.scn?'What-if view. The numbers show the order of effects. Choose another scenario or press Overview.':(state.tour!==null?'Guided tour. Use Next and Back in the panel. Exit the tour to change filters.':'Tap a box or an arrow to see what moves, where it is heading and how to check it.');}
+  document.getElementById('hint').textContent=msg;
+  var tb=document.getElementById('tour');
+  tb.textContent=state.tour!==null?'Exit tour':'Follow the loop';
+  tb.setAttribute('data-act',state.tour!==null?'tour-exit':'tour-start');
+  var bb=document.getElementById('build');bb.textContent=state.build!==null?'Exit build-up':'Build it up';bb.setAttribute('data-act',state.build!==null?'build-exit':'build-start');
+syncLevel();renderPanel();renderList();tick();
+}
+
+/* ---------- panel ---------- */
+var panel=document.getElementById('panel');
+function relRows(n){
+  var out=[],inc=[],bi=[];
+  links.forEach(function(l){
+    if(l.type==='bi'&&(l.from===n.id||l.to===n.id)){bi.push(l);}
+    else if(l.from===n.id){out.push(l);}
+    else if(l.to===n.id){inc.push(l);}
+  });
+  function row(l,otherId){
+    return '<li><button class="row" type="button" data-act="link" data-id="'+l.id+'"><span class="g g-'+l.type+'" aria-hidden="true">'+TYPES[l.type].glyph+'</span><span><b>'+esc(N[otherId].label)+'</b><small>'+esc(l.label)+' ('+TYPES[l.type].name.toLowerCase()+') \u00B7 '+TREND[l.hyp.trend].glyph+' '+TREND[l.hyp.trend].name+'</small></span></button></li>';
+  }
+  var h='';
+  if(inc.length){h+='<p class="sub">Receives from</p><ul>'+inc.map(function(l){return row(l,l.from);}).join('')+'</ul>';}
+  if(out.length){h+='<p class="sub">Sends to</p><ul>'+out.map(function(l){return row(l,l.to);}).join('')+'</ul>';}
+  if(bi.length){h+='<p class="sub">Exchanges with</p><ul>'+bi.map(function(l){return row(l,l.from===n.id?l.to:l.from);}).join('')+'</ul>';}
+  return h;
+}
+function evHtml(ev){return '<ul class="facts"><li><span class="tag tag-'+ev.tag+'">'+TAGS[ev.tag]+'</span>'+esc(ev.t)+(ev.src?'<small>'+(ev.url?'<a href="'+ev.url+'" target="_blank" rel="noopener">'+esc(ev.src)+'</a>':esc(ev.src))+'</small>':'')+'</li></ul>';}
+function sec(t,body){return '<h3>'+t+'</h3>'+body;}
+function fw(){return '<span class="tag">My framework</span>';}
+function riskP(t){return '<p>'+fw()+esc(t)+'</p>';}
+function evList(arr){
+  var exp=state.level==='expert',shown=exp?arr:arr.slice(0,1);
+  var h='<ul class="facts">'+shown.map(function(f){return '<li><span class="tag tag-'+f.tag+'">'+TAGS[f.tag]+'</span>'+esc(f.t)+(f.src?'<small>'+esc(f.src)+'</small>':'')+'</li>';}).join('')+'</ul>';
+  if(!exp&&arr.length>1){h+='<p class="note">'+(arr.length-1)+' more '+(arr.length-1===1?'figure':'figures')+' in the Expert view.</p>';}
+  return h;
+}
+function boxRow(n){return '<li><button class="row" type="button" data-act="node" data-id="'+n.id+'"><span class="g" aria-hidden="true">□</span><span><b>'+esc(n.label)+'</b><small>'+esc(n.sub)+'</small></span></button></li>';}
+function navDots(i,n){var d='';for(var k=0;k<n;k++){d+='<i class="'+(k<=i?'on':'')+'"></i>';}return '<div class="dots" aria-hidden="true">'+d+'</div>';}
+/* every panel follows: In plain English, How it connects, Evidence, What could go wrong, then Rules angle where there is one */
+function teaser(what){return '<p class="note">The '+what+' for this box is in the Expert view.</p><p><button class="btn" type="button" data-act="level" data-v="expert">Show Expert view</button></p>';}
+function nodePanel(n){
+  var h='<button class="back" type="button" data-act="home">← Overview</button><h2>'+esc(n.label)+'</h2>';
+  if(n.lev){h+='<p><span class="pill">Leverage: '+esc(n.lev[0])+'</span> <span class="note">'+esc(n.lev[1])+' My classification.</span></p>';}
+  h+=sec('In plain English','<p>'+esc(n.role)+'</p>');
+  h+=sec('How it connects',relRows(n));
+  h+=sec('Evidence',n.facts?evList(n.facts):'<p>'+fw()+'No sourced figure for this box in this view.</p>');
+  if(XP[n.id]){h+=sec('Technical detail',state.level==='expert'?'<p><span class="tag tag-'+XP[n.id].tag+'">'+TAGS[XP[n.id].tag]+'</span>'+esc(XP[n.id].t)+'</p>':teaser('technical notes'));}
+  h+=sec('What could go wrong',riskP(NRISK[n.id]));
+  if(n.legal){h+=sec('Rules angle',state.level==='expert'?'<ul class="legal">'+n.legal.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul><p class="note" style="margin-top:8px">My framework. Lines marked (sourced) or (primary) are supported by a source I opened. Not legal advice.</p>':teaser('rules angle'));}
+  return h;
+}
+function linkPanel(l){
+  var a=N[l.from],b=N[l.to],T=TYPES[l.type];
+  var title=l.type==='bi'?esc(a.label)+' ⇄ '+esc(b.label):esc(a.label)+' → '+esc(b.label);
+  var h='<button class="back" type="button" data-act="home">← Overview</button><h2>'+title+'</h2>';
+  h+='<p><span class="typebadge t-'+l.type+'"><span aria-hidden="true">'+T.glyph+'</span>'+T.name+'</span></p>';
+  var plain=l.type==='bi'?'<p><b>'+esc(a.label)+' → '+esc(b.label)+':</b> '+esc(l.fwd)+'</p><p><b>'+esc(b.label)+' → '+esc(a.label)+':</b> '+esc(l.back)+'</p>':'<p>'+esc(l.fwd)+'.</p>';
+  h+=sec('In plain English',plain+'<p>'+fw()+esc(l.why)+'</p>');
+  h+=sec('How it connects','<p>'+T.help+'</p><ul>'+boxRow(a)+boxRow(b)+'</ul>'+(state.level==='expert'?'<p class="note" style="margin-top:8px">Layers: '+l.layers.map(function(x){return LAYERS.filter(function(L){return L[0]===x;})[0][1];}).join(', ')+'.</p>':''));
+  h+=sec('Evidence',evList([l.ev]));
+  h+=sec('Hypothesis','<p>'+trendTag(l)+' <span class="note">For the next 12 to 24 months, reviewed '+REVIEWED+'.</span></p><p>'+fw()+esc(l.hyp.t)+'</p><ul class="legal"><li><b>Confirmed if:</b> '+esc(l.hyp.yes)+'</li><li><b>Refuted if:</b> '+esc(l.hyp.no)+'</li>'+(state.level==='expert'?'<li><b>Indicator:</b> '+esc(l.hyp.ind)+'</li><li><b>Check at:</b> '+esc(l.hyp.check)+'</li>':'')+'</ul>'+(state.level==='expert'?'':'<p class="note">Indicators and where to check are in the Expert view.</p>')+markHtml(l));
+  if((LDOM[l.id]||[]).length){h+=sec('Who oversees this',oversees(l));}
+  if(LSTAT[l.id]){h+=sec('Legal status',legalStatus(l));}
+  h+=sec('What could go wrong',riskP(LRISK[l.id]||TYPERISK[l.type]));
+  if(l.minor){h+='<p class="note" style="margin-top:8px">Rule links are my framework, not a sourced figure.</p>';}
+  return h;
+}
+function tourPanel(i){
+  var s=TOUR[i],h='<h2>'+esc(s.title)+'</h2>'+navDots(i,TOUR.length)+'<p class="note">Step '+(i+1)+' of '+TOUR.length+'</p>';
+  h+=sec('In plain English','<p>'+esc(s.text)+'</p>');
+  h+=sec('How it connects','<ul class="how">'+s.links.map(function(id){var l=LK[id];return '<li><span class="g g-'+l.type+'" aria-hidden="true">'+TYPES[l.type].glyph+'</span><span>'+esc(N[l.from].label)+(l.type==='bi'?' ⇄ ':' → ')+esc(N[l.to].label)+': '+esc(l.label)+'</span></li>';}).join('')+'</ul>');
+  h+=sec('Evidence',s.facts.length?'<ul class="facts">'+s.facts.map(function(t){return '<li>'+esc(t)+'</li>';}).join('')+'</ul>':'<p>'+fw()+'No sourced figure for this step. See the boxes.</p>');
+  h+=sec('What could go wrong',riskP(TRISK[i]));
+  if(i===TOUR.length-1){h+=sec('What to remember',ideasList());}
+  h+='<div class="nav"><button class="btn" type="button" data-act="tour-prev"'+(i===0?' disabled':'')+'>Back</button><button class="btn primary" type="button" data-act="tour-next">'+(i===TOUR.length-1?'Finish':'Next')+'</button><button class="btn" type="button" data-act="tour-exit">Exit</button></div>';
+  return h;
+}
+function buildPanel(i){
+  var b=BUILD[i],nn=nodes.filter(function(n){return n.fs===i;}).length,ll=links.filter(function(l){return l.fs===i;}).length;
+  var h='<h2>'+(i+1)+' of '+BUILD.length+': '+esc(b.title)+'</h2>'+navDots(i,BUILD.length)+'<p class="note">Adds '+nn+' boxes and '+ll+' links. New items glow.</p>';
+  h+=sec('In plain English','<p>'+esc(b.plain)+'</p>');
+  h+=sec('How it connects','<p>'+esc(b.connects)+'</p>');
+  h+=sec('Evidence',evList(b.ev));
+  h+=sec('What could go wrong',riskP(b.risk));
+  if(i===BUILD.length-1){h+=sec('What to remember',ideasList());}
+  h+='<div class="nav"><button class="btn" type="button" data-act="build-prev"'+(i===0?' disabled':'')+'>Back</button><button class="btn primary" type="button" data-act="build-next">'+(i===BUILD.length-1?'Finish':'Next')+'</button><button class="btn" type="button" data-act="build-exit">Exit</button></div>';
+  return h;
+}
+function scnPanel(s){
+  var h='<button class="back" type="button" data-act="home">← Overview</button><h2>What if: '+esc(s.label.toLowerCase())+'?</h2>';
+  h+=sec('In plain English','<p>'+esc(s.intro)+'</p>');
+  h+=sec('How it connects','<ol class="steps">'+s.steps.map(function(st){return '<li>'+esc(st.t)+'</li>';}).join('')+'</ol><p class="note" style="margin-top:8px">The numbers on the map match these steps.</p>');
+  h+=sec('Evidence',evList([SEV[s.id]]));
+  h+=sec('Limits of this view',riskP('This is my reasoning along the drawn links, with no probabilities. Real effects may be larger, smaller or absent.'));
+  return h;
+}
+function ideasList(){return '<ol class="steps">'
+    +'<li><b>Money builds capacity.</b> The five largest US buyers plan more than $800B of capex in 2026. <span class="tag tag-primary">Primary</span></li>'
+    +'<li><b>Chips and power are the bottlenecks.</b> The top foundry holds a 72.5% market share, and more than 2,500 GW of projects wait in grid queues. <span class="tag tag-primary">Primary</span></li>'
+    +'<li><b>Revenue must close the loop.</b> Customer fees and usage feed back into funding. Whether revenue catches up with spending is the open question. <span class="tag">My framework</span></li></ol>';}
+function overview(){
+  var h='<h2>The loop in 30 seconds</h2><p>AI needs chips, power and money at once. They depend on each other, and customers’ payments are meant to close the loop.</p>';
+  h+=sec('Three ideas to remember',ideasList());
+  h+=sec('How to read the map','<ul class="how">'+['uni','bi','term','circ'].map(function(t){return '<li><span class="g g-'+t+'" aria-hidden="true">'+TYPES[t].glyph+'</span><span><b>'+TYPES[t].name+'.</b> '+TYPES[t].help+'</span></li>';}).join('')+'</ul><p class="note" style="margin-top:8px">Moving dots show direction. Tap any box or arrow for details.</p>');
+  h+=sec('Choose how to learn','<div class="nav" style="margin-top:0"><button class="btn primary" type="button" data-act="build-start">Build it up</button><button class="btn" type="button" data-act="tour-start">Follow the loop</button><button class="btn" type="button" data-act="scn" data-v="power">Try: power is late</button></div>');
+  if(reduced){h+='<p class="note" style="margin-top:12px">Motion is paused because your device asks for reduced motion. Dots show direction at rest. Press Play motion to animate.</p>';}
+  return h;
+}
+function facts1(n){return n.facts&&n.facts.length?' '+n.facts[0].t+' ('+TAGS[n.facts[0].tag].toLowerCase()+')':'';}
+function caption(){
+  var t;
+  if(state.build!==null){var bs=BUILD[state.build];t='Build-up, step '+(state.build+1)+' of '+BUILD.length+': '+bs.title+'. '+bs.plain;}
+  else if(state.scn){var s=SC[state.scn];t='What if: '+s.label.toLowerCase()+'? '+s.steps.map(function(x,i){return (i+1)+'. '+x.t;}).join(' ')+' This is illustrative reasoning along the links in the map, not a forecast.';}
+  else if(state.tour!==null){var st=TOUR[state.tour];t=st.title+'. '+st.text+(st.facts.length?' '+st.facts.join(' '):'');}
+  else if(state.sel&&state.sel.kind==='node'){var n=N[state.sel.id];t=n.label+': '+n.role+(n.lev?' Leverage: '+n.lev[0].toLowerCase()+'.':'')+facts1(n);}
+  else if(state.sel&&state.sel.kind==='link'){var l=LK[state.sel.id];t=N[l.from].label+(l.type==='bi'?' ⇄ ':' → ')+N[l.to].label+' ('+TYPES[l.type].name.toLowerCase()+'): '+l.fwd+'. '+l.why+' '+l.ev.t+' ('+TAGS[l.ev.tag].toLowerCase()+')';}
+  else{t='Where could the AI funding loop break? Money, chips, power and rules all feed each other, and the open question is whether end-user revenue catches up with capex.';}
+  return t+'\n\nFigures carry an evidence tag in the tool: Primary, Secondary, Estimate, Peer-reviewed or My framework. Not financial or legal advice.';
+}
+function capHtml(){
+  var h='<div class="cap"><button class="btn" type="button" data-act="cap" aria-expanded="'+state.cap+'">'+(state.cap?'Hide caption':'Caption for a post')+'</button>';
+  if(state.cap){h+='<textarea id="capbox" rows="7" readonly aria-label="Caption text">'+esc(caption())+'</textarea><div class="nav"><button class="btn primary" type="button" data-act="copy">Copy caption</button></div><p class="note" id="capnote">To share the picture, take a screenshot. The page cannot save images.</p>';}
+  return h+'</div>';
+}
+function renderPanel(){
+  var h;
+  if(state.build!==null){h=buildPanel(state.build);}
+  else if(state.scn){h=scnPanel(SC[state.scn]);}
+  else if(state.tour!==null){h=tourPanel(state.tour);}
+  else if(state.sel&&state.sel.kind==='node'){h=nodePanel(N[state.sel.id]);}
+  else if(state.sel&&state.sel.kind==='link'){h=linkPanel(LK[state.sel.id]);}
+  else{h=overview();}
+  panel.innerHTML=h+capHtml();applyGloss(panel);panel.scrollTop=0;
+}
+var listEl=document.getElementById('list');
+function renderList(){
+  listEl.innerHTML=links.filter(visible).map(function(l){
+    var arrow=l.type==='bi'?' ⇄ ':' → ';
+    return '<button class="row" type="button" data-act="link" data-id="'+l.id+'"><span class="g g-'+l.type+'" aria-hidden="true">'+TYPES[l.type].glyph+'</span><span><b>'+esc(N[l.from].label)+arrow+esc(N[l.to].label)+'</b><small>'+esc(l.label)+' ('+TYPES[l.type].name.toLowerCase()+') \u00B7 '+TREND[l.hyp.trend].glyph+' '+TREND[l.hyp.trend].name+'</small></span></button>';
+  }).join('')||'<p class="note">No relationships match these filters.</p>';
+}
+function flash(msg){hintMsg=msg;document.getElementById('hint').textContent=msg;setTimeout(function(){hintMsg='';render();},2600);}
+function copyCap(){
+  var ta=document.getElementById('capbox'),note=document.getElementById('capnote');if(!ta){return;}
+  ta.focus();ta.select();
+  var fallback=function(){if(note){note.textContent='Text selected. Copy it with your keyboard.';}};
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(ta.value).then(function(){if(note){note.textContent='Copied.';}},fallback);
+  }else{fallback();}
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(ev){
+  var cu=document.querySelector('.node.cue');if(cu){cu.classList.remove('cue');}
+  var pp=document.getElementById('pop');
+  if(!pp.hidden&&!ev.target.closest('#pop')&&!ev.target.closest('[data-act="term"]')){pp.hidden=true;}
+  var el=ev.target.closest?ev.target.closest('[data-act]'):null;if(!el){return;}
+  var act=el.getAttribute('data-act'),v=el.getAttribute('data-v')||el.getAttribute('data-id');
+  if(act==='home'){state.sel=null;state.tour=null;state.scn=null;state.build=null;render();}
+  else if(act==='node'){select('node',v);}
+  else if(act==='link'){select('link',v);}
+  else if(act==='mark'){var lid=el.getAttribute('data-id');if(MARKS[lid]&&MARKS[lid].v===v){delete MARKS[lid];}else{MARKS[lid]={v:v,d:new Date().toISOString().slice(0,10)};}saveMarks();renderScore();renderPanel();}
+  else if(act==='score-copy'){var tx=document.getElementById('scoretxt');tx.select();try{navigator.clipboard.writeText(tx.value).then(function(){flash('Copied.');},function(){flash('Select the text and copy it.');});}catch(e){flash('Select the text and copy it.');}}
+  else if(act==='score-clear'){MARKS={};saveMarks();renderScore();renderPanel();}
+  else if(act==='jur'){state.jur=v;renderAuth();render();}
+  else if(act==='auth'){var d=document.getElementById('authd');d.open=true;renderAuth();var t=document.getElementById('dom-'+v);if(t){t.scrollIntoView({block:'start'});}}
+  else if(act==='reset'){
+    if(state.tour!==null||state.build!==null){flash('Exit the tour or build-up first.');return;}
+    state.layer='all';state.trend=null;state.only=null;state.ctx=false;state.scn=null;state.sel=null;
+    ['uni','bi','term','circ'].forEach(function(t){state.types[t]=true;});render();
+  }
+  else if(act==='trend'){
+    if(state.tour!==null||state.build!==null){flash('Exit the tour or build-up to change filters.');return;}
+    if(el.getAttribute('aria-disabled')==='true'&&v!=='all'){flash('No flow is hypothesised to fall, so there is nothing to show.');return;}
+    state.scn=null;state.sel=null;state.trend=(v==='all'||state.trend===v)?null:v;render();
+  }
+  else if(act==='layer'||act==='only'){
+    if(state.tour!==null||state.build!==null){flash('Exit the tour or build-up to change filters.');return;}
+    state.scn=null;state.sel=null;
+    if(act==='layer'){state.layer=v;}
+    else{state.only=state.only===v?null:v;['uni','bi','term','circ'].forEach(function(t){state.types[t]=state.only===null||state.only===t;});}
+    render();
+  }
+  else if(act==='scn'){state.scn=state.scn===v?null:v;state.tour=null;state.build=null;state.sel=null;render();if(state.scn){focusPanel();}}
+  else if(act==='tour-start'){state.tour=0;state.sel=null;state.scn=null;state.build=null;render();focusPanel();}
+  else if(act==='build-start'){state.build=0;state.tour=null;state.sel=null;state.scn=null;render();focusPanel();}
+  else if(act==='build-next'){if(state.build>=BUILD.length-1){state.build=null;}else{state.build++;}render();}
+  else if(act==='build-prev'){if(state.build>0){state.build--;render();}}
+  else if(act==='build-exit'){state.build=null;render();}
+  else if(act==='tour-next'){if(state.tour>=TOUR.length-1){state.tour=null;}else{state.tour++;}render();}
+  else if(act==='tour-prev'){if(state.tour>0){state.tour--;render();}}
+  else if(act==='tour-exit'){state.tour=null;render();}
+  else if(act==='cap'){state.cap=!state.cap;renderPanel();}
+  else if(act==='copy'){copyCap();}
+  else if(act==='level'){state.level=v==='expert'?'expert':'beginner';try{localStorage.setItem('ailoop-level',state.level);}catch(e){}render();}
+  else if(act==='term'){showPop(el,v);}
+  else if(act==='rec-start'){recStart(false);}
+  else if(act==='rec-start-tall'){recStart(true);}
+  else if(act==='rec-stop'){recStop();}
+  else if(act==='rec-next'){recNext();recSchedule();}
+  else if(act==='rec-prev'){recPrev();recSchedule();}
+  else if(act==='rec-pause'){recPaused=!recPaused;recSchedule();recDraw();}
+});
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='Escape'){return;}
+  var pp=document.getElementById('pop');
+  if(!pp.hidden){pp.hidden=true;return;}
+  if(document.body.classList.contains('rec')){recStop();}
+});
+var playBtn=document.getElementById('play');
+function syncPlay(){playBtn.textContent=state.playing?'Pause motion':'Play motion';playBtn.setAttribute('aria-pressed',String(state.playing));}
+playBtn.addEventListener('click',function(){state.playing=!state.playing;syncPlay();if(state.playing){last=performance.now();raf=requestAnimationFrame(frame);}});
+
+/* ---------- record view ---------- */
+var recTimer=0,recI=0,recK=1,recPaused=false,recTall=false,stageParent=null,stageNext=null;
+var REC=[{id:'overview',overview:true,label:'The whole loop',steps:[
+  {t:'Money, chips, power and rules feed each other around the AI build-out.'},
+  {t:'Dots show direction. Double-headed lines go both ways, bars end a flow, and dashed lines loop back.'},
+  {t:'Now see where it can break, one what-if at a time.'}]}].concat(SCN);
+function recTitle(s){return s.overview?s.label:'What if: '+s.label.toLowerCase()+'?';}
+function recDraw(){
+  var s=REC[recI];state.scn=s.overview?null:s.id;state.reveal=s.overview?null:recK;state.sel=null;state.tour=null;state.build=null;render();
+  if(recTall){
+    document.getElementById('vtitle').textContent=recTitle(s);
+    document.getElementById('vstep').textContent=recK+'. '+s.steps[recK-1].t;
+    document.getElementById('vdots').innerHTML=s.steps.map(function(_,k){return '<i class="'+(k<recK?'on':'')+'"></i>';}).join('');
+    document.getElementById('rtpause').textContent=recPaused?'Play':'Pause';
+    return;
+  }
+  var el=document.getElementById('recbar');
+  el.innerHTML='<div class="rtitle">'+esc(recTitle(s))+'</div><p class="rstep">'+recK+'. '+esc(s.steps[recK-1].t)+'</p><div class="dots" aria-hidden="true">'+s.steps.map(function(_,k){return '<i class="'+(k<recK?'on':'')+'"></i>';}).join('')+'</div><div class="nav"><button class="btn" type="button" data-act="rec-prev">Back</button><button class="btn" type="button" data-act="rec-pause">'+(recPaused?'Play':'Pause')+'</button><button class="btn" type="button" data-act="rec-next">Next</button><button class="btn" type="button" data-act="rec-stop">Exit (Esc)</button></div>';
+}
+function recNext(){var s=REC[recI];if(recK<s.steps.length){recK++;}else{recI=(recI+1)%REC.length;recK=1;}recDraw();}
+function recPrev(){if(recK>1){recK--;}else{recI=(recI+REC.length-1)%REC.length;recK=REC[recI].steps.length;}recDraw();}
+function recSchedule(){clearInterval(recTimer);if(!recPaused&&document.body.classList.contains('rec')){recTimer=setInterval(recNext,4500);}}
+function recStart(tall){
+  recTall=!!tall;document.body.classList.add('rec');
+  if(recTall){
+    var st=document.querySelector('.stage');stageParent=st.parentNode;stageNext=st.nextSibling;
+    document.getElementById('vmap').appendChild(st);
+    document.body.classList.add('tall');applyLayout('tall');document.getElementById('rectools').hidden=false;
+  }else{document.getElementById('recbar').hidden=false;}
+  recI=0;recK=1;recPaused=false;recDraw();recSchedule();
+}
+function recStop(){
+  clearInterval(recTimer);
+  if(recTall){
+    var st=document.querySelector('.stage');stageParent.insertBefore(st,stageNext);
+    document.body.classList.remove('tall');applyLayout('wide');document.getElementById('rectools').hidden=true;recTall=false;
+  }
+  document.body.classList.remove('rec');document.getElementById('recbar').hidden=true;state.reveal=null;state.scn=null;render();
+}
+
+/* ---------- animation ---------- */
+var SPEED=60,clock=0,last=0,raf=0;
+function ss(a,b,x){var t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t);}
+function tick(){
+  links.forEach(function(l){
+    if(!l.on||(l.minor&&!l.g.classList.contains('focus'))){return;}
+    var n=l.per,len=l.len,i,s,p,k;
+    for(i=0;i<n;i++){
+      s=(clock*SPEED+i*len/n)%len;k=s/len;
+      p=l.path.getPointAtLength(s);
+      l.fw[i].setAttribute('cx',p.x);l.fw[i].setAttribute('cy',p.y);
+      if(l.type==='term'){var f=1-ss(.8,1,k);l.fw[i].setAttribute('r',(3.4*f).toFixed(2));}
+      if(l.type==='bi'){var q=l.path.getPointAtLength(len-s);l.bw[i].setAttribute('cx',q.x);l.bw[i].setAttribute('cy',q.y);}
+    }
+  });
+}
+function frame(ts){
+  if(!state.playing){return;}
+  var dt=Math.min(.05,(ts-last)/1000);last=ts;clock+=dt;tick();raf=requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange',function(){if(document.hidden){cancelAnimationFrame(raf);}else if(state.playing){last=performance.now();raf=requestAnimationFrame(frame);}});
+
+syncPlay();render();
+(function(){var c=document.querySelector('.node[data-id="fund"]');if(c){c.classList.add('cue');}})();
+if(state.playing){last=performance.now();raf=requestAnimationFrame(frame);}
+})();
+</script>
+
+<p id="licence" style="max-width:1100px;margin:24px auto 0;padding:16px 20px 28px;border-top:1px solid rgba(128,128,128,.35);font:13px/1.55 system-ui,-apple-system,Segoe UI,sans-serif;opacity:.85">© 2026 Habbine Estelle Kim. Free to share and adapt under <a href="https://creativecommons.org/licenses/by-nc/4.0/" rel="license noopener" target="_blank">CC BY-NC 4.0</a>: credit is required, commercial use is not permitted. Please credit: Habbine Estelle Kim, AI Loop Explorer, https://www.kimavocat.com/ai-loop-explorer.html. This tool previews a forthcoming article that is still in progress. Third-party names and the underlying public information remain the property of their sources and owners.</p>

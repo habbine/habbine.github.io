@@ -591,7 +591,6 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 /* publication banner: slow drifting circles */
 @keyframes banner-drift-big { 0%, 100% { translate: 0 0; } 50% { translate: -36px 28px; } }
 @keyframes banner-drift-small { 0%, 100% { translate: 0 0; } 50% { translate: -48px -30px; } }
-
 /* publication banner: breathing glow + ambient light (same plum palette) */
 @keyframes banner-breathe { 0%, 100% { scale: 1; } 50% { scale: 1.035; } }
 @keyframes banner-ambient {
@@ -678,7 +677,7 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 }
 @media (max-width: 640px) { .orbit .scan { display: none; } .orbit .sat::after { display: none; } }
 @media (prefers-reduced-motion: reduce) {
-  .banner::before, .banner::after, .orbit .scan, .orbit .sat, .banner > .stars { animation: none !important; will-change: auto; }
+  .banner, .banner::before, .banner::after, .orbit .scan, .orbit .sat, .banner > .stars { animation: none !important; will-change: auto; }
   .orbit .sat { translate: calc(var(--W) * 0.62) calc(var(--W) * 0.1); }
 }
 @media (max-width: 640px) { .banner { animation: none; } }
@@ -731,13 +730,7 @@ html:lang(ko) .article p, html:lang(ko) .article li, html:lang(ko) .article bloc
 /* Korean hero sub-line: left-aligned, no mid-word breaks */
 html[lang="ko"] .hero-sub { text-align: justify; text-align-last: left; word-break: keep-all; }
 
-/* desktop: photo spans exactly from the top of the name to the bottom of the social row, at every width.
-   The photo cell stretches to the text column's height; the image fills it (cropped from the top, face kept). */
-@media (min-width: 861px) {
-  .hero-in { align-items: stretch; padding-bottom: 48px; }
-  .hero-text { padding-bottom: 0; }
-  .hero-photo { align-self: stretch; margin-bottom: 0; position: relative; min-height: 0; }
-  .hero-photo img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; object-position: center top; }
-}
-
-.ai-note { word-break: keep-all; margin: 14px 0 0; padding-top: 14px; border-top: 1px solid var(--plum-line); font-size: 13px; line-height: 1.5; color: var(--muted); }
+/* desktop: photo top aligns with the hero text, no gap below */
+@media (min-width: 861px) { .hero-photo { align-self: start; margin-bottom: 0; } }
+/* desktop: photo bottom meets the bottom of the social icon row (sized on a ~1254px viewport) */
+@media (min-width: 861px) { .hero-photo img { width: 328px; max-width: none; } }
